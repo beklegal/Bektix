@@ -1,8 +1,8 @@
 import type { RequestHandler } from "express";
-import { pool } from "../db/pool";
-import { serializeShop, serializeUser } from "../domain/serializers";
-import { sendApiError } from "../http/errors";
-import { clearUserSessionCookie, getUserSession } from "./session";
+import { pool } from "../db/pool.js";
+import { serializeShop, serializeUser } from "../domain/serializers.js";
+import { sendApiError } from "../http/errors.js";
+import { clearUserSessionCookie, getUserSession } from "./session.js";
 
 type JoinedRow = {
   user_id: string;

@@ -1,5 +1,5 @@
 import type { Product, Sale, SaleLineItem, Shop, ShopPreferences, User } from "@shared/bektix";
-import { normalizeShopPreferences } from "./preferences";
+import { normalizeShopPreferences } from "./preferences.js";
 
 function iso(value: unknown) {
   if (value instanceof Date) return value.toISOString();

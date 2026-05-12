@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
-import { env } from "../env";
-import { hashPassword } from "../auth/password";
-import { defaultShopPreferences, normalizeShopPreferences } from "../domain/preferences";
-import { pool } from "./pool";
+import { env } from "../env.js";
+import { hashPassword } from "../auth/password.js";
+import { defaultShopPreferences, normalizeShopPreferences } from "../domain/preferences.js";
+import { pool } from "./pool.js";
 
 const JILKEM_SHOP_ID = "00000000-0000-4000-8000-000000000001";
 const JILKEM_SHOP_NAME = "Jilkem Company Limited";

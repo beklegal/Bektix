@@ -2,11 +2,11 @@ import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
 import type { UserRole, UserStatus } from "@shared/bektix";
-import { requireUser } from "../auth/requireUser";
-import { hashPassword } from "../auth/password";
-import { pool } from "../db/pool";
-import { serializeUser } from "../domain/serializers";
-import { sendApiError } from "../http/errors";
+import { requireUser } from "../auth/requireUser.js";
+import { hashPassword } from "../auth/password.js";
+import { pool } from "../db/pool.js";
+import { serializeUser } from "../domain/serializers.js";
+import { sendApiError } from "../http/errors.js";
 
 export const usersRouter = express.Router();
 usersRouter.use(requireUser);

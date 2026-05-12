@@ -1,5 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import { sendApiError } from "./errors";
+import { sendApiError } from "./errors.js";
 
 type RateLimitOptions = {
   windowMs: number;

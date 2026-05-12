@@ -1,16 +1,16 @@
 import express from "express";
 import { z } from "zod";
-import { pool } from "../db/pool";
-import { verifyPassword } from "../auth/password";
+import { pool } from "../db/pool.js";
+import { verifyPassword } from "../auth/password.js";
 import {
   clearUserSessionCookie,
   setUserSessionCookie,
   signUserSession,
-} from "../auth/session";
-import { requireUser } from "../auth/requireUser";
-import { serializeShop, serializeUser } from "../domain/serializers";
-import { sendApiError } from "../http/errors";
-import { loginRateLimit } from "../http/security";
+} from "../auth/session.js";
+import { requireUser } from "../auth/requireUser.js";
+import { serializeShop, serializeUser } from "../domain/serializers.js";
+import { sendApiError } from "../http/errors.js";
+import { loginRateLimit } from "../http/security.js";
 
 export const authRouter = express.Router();
 

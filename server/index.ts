@@ -1,19 +1,19 @@
 import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
-import { migrate } from "./db/migrate";
-import { bootstrapSingleShop } from "./db/bootstrap";
-import { authRouter } from "./routes/auth";
-import { productsRouter } from "./routes/products";
-import { usersRouter } from "./routes/users";
-import { salesRouter } from "./routes/sales";
-import { shopRouter } from "./routes/shop";
+import { migrate } from "./db/migrate.js";
+import { bootstrapSingleShop } from "./db/bootstrap.js";
+import { authRouter } from "./routes/auth.js";
+import { productsRouter } from "./routes/products.js";
+import { usersRouter } from "./routes/users.js";
+import { salesRouter } from "./routes/sales.js";
+import { shopRouter } from "./routes/shop.js";
 import {
   apiRateLimit,
   rejectCrossOriginWrites,
   requestErrorHandler,
   securityHeaders,
-} from "./http/security";
+} from "./http/security.js";
 
 export async function createServer() {
   const app = express();

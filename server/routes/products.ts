@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
-import { requireUser } from "../auth/requireUser";
-import { pool } from "../db/pool";
-import { serializeProduct } from "../domain/serializers";
-import { sendApiError } from "../http/errors";
+import { requireUser } from "../auth/requireUser.js";
+import { pool } from "../db/pool.js";
+import { serializeProduct } from "../domain/serializers.js";
+import { sendApiError } from "../http/errors.js";
 
 export const productsRouter = express.Router();
 productsRouter.use(requireUser);

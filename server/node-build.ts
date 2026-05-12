@@ -1,5 +1,5 @@
 import path from "node:path";
-import { createServer } from "./index";
+import { createServer } from "./index.js";
 import * as express from "express";
 
 const port = process.env.PORT || 3000;
@@ -46,4 +46,3 @@ process.on("SIGINT", () => {
   console.log("Received SIGINT, shutting down gracefully");
   process.exit(0);
 });
-

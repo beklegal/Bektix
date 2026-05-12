@@ -1,11 +1,11 @@
 import express from "express";
 import { z } from "zod";
 import type { BusinessType, ShopPreferences } from "@shared/bektix";
-import { requireUser } from "../auth/requireUser";
-import { pool } from "../db/pool";
-import { normalizeShopPreferences } from "../domain/preferences";
-import { serializeShop } from "../domain/serializers";
-import { sendApiError } from "../http/errors";
+import { requireUser } from "../auth/requireUser.js";
+import { pool } from "../db/pool.js";
+import { normalizeShopPreferences } from "../domain/preferences.js";
+import { serializeShop } from "../domain/serializers.js";
+import { sendApiError } from "../http/errors.js";
 
 export const shopRouter = express.Router();
 shopRouter.use(requireUser);

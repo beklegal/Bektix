@@ -2,10 +2,10 @@ import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
 import type { PaymentMethod, ShopPreferences } from "@shared/bektix";
-import { requireUser } from "../auth/requireUser";
-import { pool } from "../db/pool";
-import { serializeSale, serializeSaleLineItem } from "../domain/serializers";
-import { sendApiError } from "../http/errors";
+import { requireUser } from "../auth/requireUser.js";
+import { pool } from "../db/pool.js";
+import { serializeSale, serializeSaleLineItem } from "../domain/serializers.js";
+import { sendApiError } from "../http/errors.js";
 
 export const salesRouter = express.Router();
 salesRouter.use(requireUser);

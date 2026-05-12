@@ -1,6 +1,6 @@
 import type { CookieOptions, Request, Response } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
-import { env } from "../env";
+import { env } from "../env.js";
 
 const USER_COOKIE = "jilkem_session";
 

@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { env } from "../env";
-import { pool } from "./pool";
+import { env } from "../env.js";
+import { pool } from "./pool.js";
 
 async function cleanDemoData() {
   if (process.env.CLEAN_DEMO_DATA !== "1") {
