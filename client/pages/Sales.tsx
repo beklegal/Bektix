@@ -25,7 +25,6 @@ export default function Sales() {
   const navigate = useNavigate();
   const { shop, products, user, actions } = useBektix();
   const currency = shop?.preferences.currency || "GH₵";
-  const taxRate = shop?.preferences.taxRatePercent ?? 0;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -65,8 +64,7 @@ export default function Sales() {
     () => cartDetailed.reduce((sum, line) => sum + line.lineTotal, 0),
     [cartDetailed],
   );
-  const tax = subtotal * (taxRate / 100);
-  const total = subtotal + tax;
+  const total = subtotal;
 
   const addToCart = (productId: string) => {
     const product = productById.get(productId);
@@ -263,10 +261,6 @@ export default function Sales() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-semibold">{formatMoney(subtotal, currency)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Tax ({taxRate}%)</span>
-                    <span className="font-semibold">{formatMoney(tax, currency)}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-border pt-3">
                     <span className="text-base font-bold">Total</span>

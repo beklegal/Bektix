@@ -154,10 +154,6 @@ export default function Receipt() {
                 <span>Subtotal</span>
                 <span className="font-semibold text-foreground">{formatMoney(sale.subtotal, currency)}</span>
               </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Tax</span>
-                <span className="font-semibold text-foreground">{formatMoney(sale.tax, currency)}</span>
-              </div>
               <div className="flex justify-between pt-2 text-base font-bold">
                 <span>Total</span>
                 <span>{formatMoney(sale.total, currency)}</span>

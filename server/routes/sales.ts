@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
-import type { PaymentMethod, ShopPreferences } from "@shared/bektix";
+import type { PaymentMethod } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
 import { pool } from "../db/pool.js";
 import { serializeSale, serializeSaleLineItem } from "../domain/serializers.js";
@@ -118,13 +118,6 @@ salesRouter.post("/", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    const shopResult = await client.query<{ preferences: unknown }>(
-      "SELECT preferences FROM shops WHERE id = $1 LIMIT 1",
-      [shopId],
-    );
-    const preferences = shopResult.rows[0]?.preferences as ShopPreferences | undefined;
-    const taxRate = preferences?.taxRatePercent ?? 0;
-
     const productIds = Array.from(new Set(parsed.data.items.map((i) => i.productId)));
 
     const productResult = await client.query(
@@ -162,8 +155,8 @@ salesRouter.post("/", async (req, res) => {
     });
 
     const subtotal = lineItems.reduce((sum, li) => sum + li.lineTotal, 0);
-    const tax = subtotal * (taxRate / 100);
-    const total = subtotal + tax;
+    const tax = 0;
+    const total = subtotal;
 
     if (parsed.data.amountPaid < total) {
       throw new Error("Insufficient payment.");
