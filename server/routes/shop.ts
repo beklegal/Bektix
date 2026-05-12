@@ -108,3 +108,33 @@ shopRouter.patch("/preferences", async (req, res) => {
 
   res.json(serializeShop(result.rows[0]));
 });
+
+shopRouter.post("/reset-data", async (req, res) => {
+  const { shopId, userId } = req.auth!;
+  if (!requireAdmin(req, res)) return;
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `
+        DELETE FROM sale_line_items
+        WHERE sale_id IN (
+          SELECT id FROM sales WHERE shop_id = $1
+        )
+      `,
+      [shopId],
+    );
+    await client.query("DELETE FROM sales WHERE shop_id = $1", [shopId]);
+    await client.query("DELETE FROM products WHERE shop_id = $1", [shopId]);
+    await client.query("DELETE FROM users WHERE shop_id = $1 AND id <> $2 AND role <> 'admin'", [shopId, userId]);
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  res.status(204).end();
+});

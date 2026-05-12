@@ -117,7 +117,7 @@ usersRouter.post("/:userId/toggle-status", async (req, res) => {
 });
 
 usersRouter.delete("/:userId", async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, userId: adminUserId } = req.auth!;
   if (!requireAdmin(req, res)) return;
 
   const { userId } = req.params;
@@ -129,6 +129,21 @@ usersRouter.delete("/:userId", async (req, res) => {
   if (!row) return sendApiError(res, 404, "not_found", "User not found.");
   if (row.role === "admin") return sendApiError(res, 400, "bad_request", "Admin cannot be deleted.");
 
-  await pool.query("DELETE FROM users WHERE id = $1 AND shop_id = $2", [userId, shopId]);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      "UPDATE sales SET cashier_user_id = $1 WHERE cashier_user_id = $2 AND shop_id = $3",
+      [adminUserId, userId, shopId],
+    );
+    await client.query("DELETE FROM users WHERE id = $1 AND shop_id = $2", [userId, shopId]);
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
   res.status(204).end();
 });

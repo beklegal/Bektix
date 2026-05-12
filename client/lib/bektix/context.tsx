@@ -27,6 +27,7 @@ type BektixContextValue = {
     logout: () => Promise<void>;
     updateShopDetails: (patch: { name?: string; businessType?: BusinessType }) => Promise<void>;
     updateShopPreferences: (patch: Partial<ShopPreferences>) => Promise<void>;
+    resetSystemData: () => Promise<void>;
     addProduct: (input: Omit<Product, "id" | "createdAt" | "updatedAt">) => Promise<void>;
     updateProduct: (
       productId: string,
@@ -111,6 +112,12 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       updateShopPreferences: async (patch) => {
         const nextShop = await api.updateShopPreferences(patch);
         queryClient.setQueryData(["auth", "me"], (prev: any) => (prev ? { ...prev, shop: nextShop } : prev));
+      },
+      resetSystemData: async () => {
+        await api.resetSystemData();
+        await queryClient.invalidateQueries({ queryKey: ["products"] });
+        await queryClient.invalidateQueries({ queryKey: ["users"] });
+        await queryClient.invalidateQueries({ queryKey: ["sales"] });
       },
       addProduct: async (input) => {
         await api.createProduct(input);

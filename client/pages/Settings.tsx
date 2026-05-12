@@ -5,10 +5,18 @@ import { useBektix } from "@/lib/bektix/context";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Save } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 
 type SettingsForm = {
   shopName: string;
@@ -26,6 +34,9 @@ type SettingsForm = {
 export default function Settings() {
   const { shop, user, actions } = useBektix();
   const [isSaving, setIsSaving] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const initial = useMemo<SettingsForm>(() => {
     return {
@@ -105,6 +116,29 @@ export default function Settings() {
     }
   };
 
+  const resetSystemData = async () => {
+    if (resetConfirm.trim().toUpperCase() !== "CLEAR") {
+      toast({ title: "Type CLEAR to confirm", variant: "destructive" });
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await actions.resetSystemData();
+      toast({ title: "System data cleared" });
+      setResetOpen(false);
+      setResetConfirm("");
+    } catch (err) {
+      toast({
+        title: "Could not clear system data",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <AppShell title="Settings" description="Shop configuration and preferences." active="settings">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -172,6 +206,21 @@ export default function Settings() {
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? "Saving..." : "Save settings"}
           </Button>
+          <div className="mt-5 border-t border-border pt-5">
+            <p className="text-sm font-semibold text-destructive">Reset system</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Clear sales, products, and staff users while keeping the admin account.
+            </p>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => setResetOpen(true)}
+              className="mt-4 h-11 w-full font-semibold"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Clear all system data
+            </Button>
+          </div>
         </Card>
       </div>
 
@@ -245,6 +294,51 @@ export default function Settings() {
           </div>
         </div>
       </Card>
+
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clear all system data?</DialogTitle>
+            <DialogDescription>
+              This removes all products, sales, and non-admin users for this shop. The admin account and shop settings stay in place.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium">Type CLEAR to confirm</label>
+            <Input
+              value={resetConfirm}
+              onChange={(e) => setResetConfirm(e.target.value)}
+              className="h-11"
+              autoComplete="off"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setResetOpen(false);
+                setResetConfirm("");
+              }}
+              className="h-11"
+              disabled={isResetting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={resetSystemData}
+              className="h-11 font-semibold"
+              disabled={isResetting || resetConfirm.trim().toUpperCase() !== "CLEAR"}
+            >
+              {isResetting ? "Clearing..." : "Clear data"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

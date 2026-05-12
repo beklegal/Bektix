@@ -51,6 +51,7 @@ export const api = {
     apiRequest<Shop>("/api/shop", { method: "PATCH", json: patch }),
   updateShopPreferences: (patch: Partial<ShopPreferences>) =>
     apiRequest<Shop>("/api/shop/preferences", { method: "PATCH", json: patch }),
+  resetSystemData: () => apiRequest<void>("/api/shop/reset-data", { method: "POST" }),
 
   getProducts: () => apiRequest<Product[]>("/api/products"),
   createProduct: (input: CreateProductRequest) =>
