@@ -6,6 +6,8 @@ export type ApiErrorCode =
   | "forbidden"
   | "not_found"
   | "conflict"
+  | "payload_too_large"
+  | "too_many_requests"
   | "internal_error";
 
 export interface ApiErrorResponse {

@@ -10,6 +10,7 @@ import {
 import { requireUser } from "../auth/requireUser";
 import { serializeShop, serializeUser } from "../domain/serializers";
 import { sendApiError } from "../http/errors";
+import { loginRateLimit } from "../http/security";
 
 export const authRouter = express.Router();
 
@@ -18,7 +19,7 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", loginRateLimit, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return sendApiError(res, 400, "bad_request", "Invalid login details.");

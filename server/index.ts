@@ -8,6 +8,12 @@ import { productsRouter } from "./routes/products";
 import { usersRouter } from "./routes/users";
 import { salesRouter } from "./routes/sales";
 import { shopRouter } from "./routes/shop";
+import {
+  apiRateLimit,
+  rejectCrossOriginWrites,
+  requestErrorHandler,
+  securityHeaders,
+} from "./http/security";
 
 export async function createServer() {
   const app = express();
@@ -15,9 +21,13 @@ export async function createServer() {
   // Middleware
   // Needed for correct `req.ip` behind platforms like Vercel/Netlify.
   app.set("trust proxy", 1);
+  app.disable("x-powered-by");
+  app.use(securityHeaders());
   app.use(cookieParser());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: "100kb" }));
+  app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+  app.use(requestErrorHandler);
+  app.use("/api", rejectCrossOriginWrites(), apiRateLimit);
 
   await migrate();
   await bootstrapSingleShop();
