@@ -1,0 +1,181 @@
+import { type ReactNode, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Home,
+  Package,
+  ShoppingCart,
+  TrendingUp,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useBektix } from "@/lib/bektix/context";
+
+type AppShellSection =
+  | "dashboard"
+  | "inventory"
+  | "sales"
+  | "reports"
+  | "users"
+  | "settings";
+
+interface AppShellProps {
+  title: string;
+  description?: string;
+  active: AppShellSection;
+  children: ReactNode;
+}
+
+const navigation = [
+  { label: "Dashboard", path: "/dashboard", key: "dashboard", icon: Home },
+  { label: "Inventory", path: "/inventory", key: "inventory", icon: Package },
+  { label: "POS", path: "/sales", key: "sales", icon: ShoppingCart },
+  { label: "Reports", path: "/reports", key: "reports", icon: TrendingUp },
+  { label: "Users", path: "/users", key: "users", icon: Users },
+  { label: "Settings", path: "/settings", key: "settings", icon: Settings },
+];
+
+export default function AppShell({ title, description, active, children }: AppShellProps) {
+  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, shop, actions } = useBektix();
+
+  const roleLabel =
+    user?.role === "admin"
+      ? "Owner • Admin"
+      : user?.role === "cashier"
+        ? "Staff • Cashier"
+        : "Staff";
+
+  const allowedNav = navigation.filter((item) => {
+    if (user?.role === "admin") return true;
+    if (item.key === "users" || item.key === "settings" || item.key === "reports") return false;
+    return true;
+  });
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-primary text-primary-foreground shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <img
+                  src="/Jilkem%20Logo.jpeg"
+                  alt="Jilkem Company Limited logo"
+                  className="h-9 w-9 object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-lg font-semibold">Jilkem</p>
+                <p className="text-xs text-primary-foreground/70 truncate max-w-[220px]">
+                  {shop?.name ? `${shop.name} - Shop Management` : "Shop Management"}
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2">
+              {allowedNav.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={item.key}
+                    variant={item.key === active ? "secondary" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "gap-2 px-4",
+                      item.key === active && "shadow-lg",
+                    )}
+                    onClick={() => navigate(item.path)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:block text-right text-sm">
+                <p className="font-medium truncate max-w-[180px]">{user?.name || user?.email || "User"}</p>
+                <p className="text-xs text-primary-foreground/70">{roleLabel}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground hover:bg-primary/90"
+                onClick={async () => {
+                  await actions.logout();
+                  navigate("/");
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+              <button
+                className="md:hidden p-2"
+                onClick={() => setMobileOpen(!mobileOpen)}
+              >
+                {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+
+          {mobileOpen && (
+            <div className="md:hidden pb-4 pt-4 space-y-2">
+              {allowedNav.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={item.key}
+                    variant={item.key === active ? "secondary" : "ghost"}
+                    className="w-full justify-start gap-3"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      navigate(item.path);
+                    }}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
+            {description && <p className="mt-2 text-sm text-muted-foreground max-w-2xl">{description}</p>}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="secondary"
+              className="h-11 px-5"
+              onClick={() => navigate("/sales")}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              New Sale
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-5"
+              onClick={() => navigate("/inventory?new=1")}
+            >
+              <Package className="h-4 w-4" />
+              Add Product
+            </Button>
+          </div>
+        </div>
+
+        {children}
+      </main>
+    </div>
+  );
+}
