@@ -1,4 +1,4 @@
-import type { Product, Sale, Shop, User } from "./bektix";
+import type { Debtor, Product, Sale, Shop, User } from "./bektix";
 
 export type ApiErrorCode =
   | "bad_request"
@@ -57,5 +57,13 @@ export interface CreateUserRequest {
 export interface CreateSaleRequest {
   items: Array<{ productId: string; quantity: number }>;
   paymentMethod: Sale["paymentMethod"];
+  payerType: Sale["payerType"];
   amountPaid: number;
 }
+
+export interface CreateDebtorRequest
+  extends Pick<Debtor, "name" | "date" | "invoiceNumber" | "amount"> {}
+
+export type UpdateDebtorRequest = Partial<
+  Pick<Debtor, "name" | "date" | "invoiceNumber" | "amount" | "status">
+>;

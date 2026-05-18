@@ -116,6 +116,7 @@ shopRouter.post("/reset-data", async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    await client.query("DELETE FROM debtors WHERE shop_id = $1", [shopId]);
     await client.query(
       `
         DELETE FROM sale_line_items

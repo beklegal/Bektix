@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   X,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBektix } from "@/lib/bektix/context";
@@ -20,6 +21,7 @@ type AppShellSection =
   | "inventory"
   | "sales"
   | "reports"
+  | "debtors"
   | "users"
   | "settings";
 
@@ -35,6 +37,7 @@ const navigation = [
   { label: "Inventory", path: "/inventory", key: "inventory", icon: Package },
   { label: "POS", path: "/sales", key: "sales", icon: ShoppingCart },
   { label: "Reports", path: "/reports", key: "reports", icon: TrendingUp },
+  { label: "Debtors", path: "/debtors", key: "debtors", icon: FileText },
   { label: "Users", path: "/users", key: "users", icon: Users },
   { label: "Settings", path: "/settings", key: "settings", icon: Settings },
 ];
@@ -57,21 +60,27 @@ export default function AppShell({ title, description, active, children }: AppSh
     return true;
   });
 
+  const logout = async () => {
+    await actions.logout();
+    setMobileOpen(false);
+    navigate("/");
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen min-w-0 bg-background text-foreground">
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-primary text-primary-foreground shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+          <div className="flex min-h-16 items-center justify-between gap-2 py-2 sm:gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:h-11 sm:w-11">
                 <img
                   src="/Jilkem%20Logo.jpeg"
                   alt="Jilkem Company Limited logo"
-                  className="h-9 w-9 object-contain"
+                  className="h-8 w-8 object-contain sm:h-9 sm:w-9"
                 />
               </div>
-              <div>
-                <p className="text-lg font-semibold">Jilkem</p>
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold sm:text-lg">Jilkem</p>
                 <p className="text-xs text-primary-foreground/70 truncate max-w-[220px]">
                   {shop?.name ? `${shop.name} - Shop Management` : "Shop Management"}
                 </p>
@@ -108,10 +117,7 @@ export default function AppShell({ title, description, active, children }: AppSh
                 variant="ghost"
                 size="icon"
                 className="text-primary-foreground hover:bg-primary/90"
-                onClick={async () => {
-                  await actions.logout();
-                  navigate("/");
-                }}
+                onClick={logout}
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -143,21 +149,29 @@ export default function AppShell({ title, description, active, children }: AppSh
                   </Button>
                 );
               })}
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3"
+                onClick={logout}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
             </div>
           )}
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
             {description && <p className="mt-2 text-sm text-muted-foreground max-w-2xl">{description}</p>}
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
             <Button
               variant="secondary"
-              className="h-11 px-5"
+              className="h-11 px-3 sm:px-5"
               onClick={() => navigate("/sales")}
             >
               <ShoppingCart className="h-4 w-4" />
@@ -165,7 +179,7 @@ export default function AppShell({ title, description, active, children }: AppSh
             </Button>
             <Button
               variant="outline"
-              className="h-11 px-5"
+              className="h-11 px-3 sm:px-5"
               onClick={() => navigate("/inventory?new=1")}
             >
               <Package className="h-4 w-4" />

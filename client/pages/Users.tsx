@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { UserRole } from "@shared/bektix";
+import type { User, UserRole } from "@shared/bektix";
 import { Plus, Shield, Trash2, User as UserIcon } from "lucide-react";
 
 type NewUserDraft = {
@@ -43,6 +43,14 @@ function roleBadge(role: UserRole) {
   if (role === "admin") return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Admin</Badge>;
   if (role === "cashier") return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Cashier</Badge>;
   return <Badge variant="secondary">Staff</Badge>;
+}
+
+function statusBadge(status: User["status"]) {
+  return status === "active" ? (
+    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>
+  ) : (
+    <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Inactive</Badge>
+  );
 }
 
 export default function Users() {
@@ -152,14 +160,65 @@ export default function Users() {
         </div>
         <Button
           onClick={openAdd}
-          className="h-11 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+          className="h-11 w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold sm:w-auto"
         >
           <Plus className="h-5 w-5 mr-2" />
           Add User
         </Button>
       </div>
 
-      <Card className="mt-6 overflow-hidden">
+      <div className="mt-6 grid gap-3 md:hidden">
+        {filtered.map((u) => (
+          <Card key={u.id} className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground">{u.name}</p>
+                <p className="text-sm text-muted-foreground">{u.email}</p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                {roleBadge(u.role)}
+                {statusBadge(u.status)}
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">
+                Joined {new Date(u.createdAt).toLocaleDateString()}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={() => toggleStatus(u.id)}
+                  disabled={u.role === "admin"}
+                  title={u.role === "admin" ? "Admin cannot be deactivated" : "Toggle active status"}
+                >
+                  <Shield className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10"
+                  onClick={() => removeUser(u.id)}
+                  disabled={u.role === "admin"}
+                  title={u.role === "admin" ? "Admin cannot be deleted" : "Delete user"}
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+
+        {filtered.length === 0 && (
+          <Card className="p-8 text-center text-sm text-muted-foreground">
+            No users found.
+          </Card>
+        )}
+      </div>
+
+      <Card className="mt-6 hidden overflow-hidden md:block">
         <Table>
           <TableHeader className="bg-muted">
             <TableRow>
@@ -178,11 +237,7 @@ export default function Users() {
                 <TableCell className="text-muted-foreground">{u.email}</TableCell>
                 <TableCell>{roleBadge(u.role)}</TableCell>
                 <TableCell>
-                  {u.status === "active" ? (
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>
-                  ) : (
-                    <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Inactive</Badge>
-                  )}
+                  {statusBadge(u.status)}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(u.createdAt).toLocaleDateString()}
@@ -259,7 +314,7 @@ export default function Users() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add user</DialogTitle>
             <DialogDescription>Invite a staff member to Jilkem.</DialogDescription>

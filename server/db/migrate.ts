@@ -86,8 +86,14 @@ export async function migrate() {
         total numeric NOT NULL,
         amount_paid numeric NOT NULL,
         change numeric NOT NULL,
-        payment_method text NOT NULL
+        payment_method text NOT NULL,
+        payer_type text NOT NULL DEFAULT 'walkIn'
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE sales
+      ADD COLUMN IF NOT EXISTS payer_type text NOT NULL DEFAULT 'walkIn';
     `);
 
     await client.query(`
@@ -115,6 +121,25 @@ export async function migrate() {
     await client.query(`
       CREATE INDEX IF NOT EXISTS sale_line_items_sale_id_idx
       ON sale_line_items(sale_id);
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS debtors (
+        id uuid PRIMARY KEY,
+        shop_id uuid NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+        name text NOT NULL,
+        date date NOT NULL,
+        invoice_number text NOT NULL,
+        amount numeric NOT NULL,
+        status text NOT NULL DEFAULT 'unpaid',
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS debtors_shop_date_idx
+      ON debtors(shop_id, date DESC);
     `);
 
     await client.query("COMMIT");

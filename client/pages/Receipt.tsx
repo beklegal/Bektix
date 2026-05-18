@@ -9,6 +9,20 @@ import { formatMoney } from "@/lib/bektix/format";
 import { api } from "@/lib/bektix/api";
 import { Printer, ArrowLeft } from "lucide-react";
 
+function paymentMethodLabel(method: string) {
+  if (method === "cash") return "Cash";
+  if (method === "mobileMoney") return "Mobile Money";
+  if (method === "cheque") return "Cheque";
+  return method;
+}
+
+function payerTypeLabel(type: string) {
+  if (type === "private") return "Private";
+  if (type === "government") return "Government";
+  if (type === "walkIn") return "Walk-in";
+  return type;
+}
+
 export default function Receipt() {
   const navigate = useNavigate();
   const { saleId } = useParams();
@@ -173,7 +187,11 @@ export default function Receipt() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Method</span>
-                <span className="font-semibold">{sale.paymentMethod === "cash" ? "Cash" : "Mobile Money"}</span>
+                <span className="font-semibold">{paymentMethodLabel(sale.paymentMethod)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Payer</span>
+                <span className="font-semibold">{payerTypeLabel(sale.payerType)}</span>
               </div>
             </div>
 

@@ -8,7 +8,9 @@ export type BusinessType =
 export type UserRole = "admin" | "cashier" | "staff";
 export type UserStatus = "active" | "inactive";
 
-export type PaymentMethod = "cash" | "mobileMoney";
+export type PaymentMethod = "cash" | "mobileMoney" | "cheque";
+export type PayerType = "private" | "government" | "walkIn";
+export type DebtorStatus = "unpaid" | "paid";
 
 export type ShopStatus = "active" | "inactive";
 
@@ -81,6 +83,19 @@ export interface Sale {
   amountPaid: number;
   change: number;
   paymentMethod: PaymentMethod;
+  payerType: PayerType;
+}
+
+export interface Debtor {
+  id: string;
+  shopId: string;
+  name: string;
+  date: string; // ISO date
+  invoiceNumber: string;
+  amount: number;
+  status: DebtorStatus;
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
 }
 
 export interface Session {

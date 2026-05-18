@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import Sales from "./pages/Sales";
 import Reports from "./pages/Reports";
+import Debtors from "./pages/Debtors";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -60,6 +61,14 @@ const App = () => (
               element={
                 <RequireAuth>
                   <Reports />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/debtors"
+              element={
+                <RequireAuth>
+                  <Debtors />
                 </RequireAuth>
               }
             />

@@ -16,7 +16,8 @@ import { isSameDay, subDays } from "date-fns";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { shop, sales, products } = useBektix();
+  const { user, shop, sales, products } = useBektix();
+  const isAdmin = user?.role === "admin";
   const currency = shop?.preferences.currency || "GH₵";
 
   const today = new Date();
@@ -63,8 +64,8 @@ export default function Dashboard() {
       active="dashboard"
     >
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-1">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-2xl font-bold text-foreground mb-1 sm:text-3xl">
             Welcome back{shop?.name ? `, ${shop.name}` : ""}!
           </h2>
           <p className="text-muted-foreground">Here's what's happening at Jilkem today</p>
@@ -73,65 +74,67 @@ export default function Dashboard() {
         {/* Top Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Total Sales Card */}
-          <Card className="p-6 border border-border hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
+          <Card className="p-5 border border-border hover:shadow-lg transition-shadow sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-sm text-muted-foreground font-medium">Total Sales Today</p>
-                <p className="text-3xl font-bold text-foreground mt-2">
+                <p className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">
                   {formatCompact(totalSalesToday, currency)}
                 </p>
                 <p className="text-xs text-accent font-semibold mt-2">
                   {salesDeltaPct >= 0 ? "↑" : "↓"} {Math.abs(salesDeltaPct).toFixed(0)}% from yesterday
                 </p>
               </div>
-              <div className="bg-accent/10 p-3 rounded-lg">
-                <DollarSign className="h-8 w-8 text-accent" />
+              <div className="shrink-0 bg-accent/10 p-3 rounded-lg">
+                <DollarSign className="h-6 w-6 text-accent sm:h-8 sm:w-8" />
               </div>
             </div>
           </Card>
 
           {/* Total Profit Card */}
-          <Card className="p-6 border border-border hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">Total Profit</p>
-                <p className="text-3xl font-bold text-foreground mt-2">
-                  {formatMoney(profitToday, currency)}
-                </p>
-                <p className="text-xs text-muted-foreground font-semibold mt-2">Today</p>
+          {isAdmin && (
+            <Card className="p-5 border border-border hover:shadow-lg transition-shadow sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground font-medium">Total Profit</p>
+                  <p className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">
+                    {formatMoney(profitToday, currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-semibold mt-2">Today</p>
+                </div>
+                <div className="shrink-0 bg-accent/10 p-3 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-accent sm:h-8 sm:w-8" />
+                </div>
               </div>
-              <div className="bg-accent/10 p-3 rounded-lg">
-                <TrendingUp className="h-8 w-8 text-accent" />
-              </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
           {/* Items Sold Card */}
-          <Card className="p-6 border border-border hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
+          <Card className="p-5 border border-border hover:shadow-lg transition-shadow sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-sm text-muted-foreground font-medium">Items Sold</p>
-                <p className="text-3xl font-bold text-foreground mt-2">{itemsSoldToday}</p>
+                <p className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">{itemsSoldToday}</p>
                 <p className="text-xs text-muted-foreground font-semibold mt-2">
                   {salesToday.length} transactions
                 </p>
               </div>
-              <div className="bg-accent/10 p-3 rounded-lg">
-                <ShoppingCart className="h-8 w-8 text-accent" />
+              <div className="shrink-0 bg-accent/10 p-3 rounded-lg">
+                <ShoppingCart className="h-6 w-6 text-accent sm:h-8 sm:w-8" />
               </div>
             </div>
           </Card>
 
           {/* Low Stock Items Card */}
-          <Card className="p-6 border border-border hover:shadow-lg transition-shadow bg-orange-50 dark:bg-orange-950/10">
-            <div className="flex items-center justify-between">
-              <div>
+          <Card className="p-5 border border-border hover:shadow-lg transition-shadow bg-orange-50 dark:bg-orange-950/10 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-sm text-muted-foreground font-medium">Low Stock Alerts</p>
-                <p className="text-3xl font-bold text-foreground mt-2">{lowStockCount}</p>
+                <p className="mt-2 text-2xl font-bold text-foreground sm:text-3xl">{lowStockCount}</p>
                 <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold mt-2">Needs attention</p>
               </div>
-              <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg">
-                <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+              <div className="shrink-0 bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-orange-600 dark:text-orange-400 sm:h-8 sm:w-8" />
               </div>
             </div>
           </Card>
@@ -155,22 +158,26 @@ export default function Dashboard() {
               <Plus className="h-5 w-5 mr-2" />
               Add Product
             </Button>
-            <Button
-              onClick={() => navigate("/reports")}
-              variant="outline"
-              className="h-12 font-semibold text-base"
-            >
-              <TrendingUp className="h-5 w-5 mr-2" />
-              View Reports
-            </Button>
-            <Button
-              onClick={() => navigate("/settings")}
-              variant="outline"
-              className="h-12 font-semibold text-base"
-            >
-              <Settings className="h-5 w-5 mr-2" />
-              Settings
-            </Button>
+            {isAdmin && (
+              <>
+                <Button
+                  onClick={() => navigate("/reports")}
+                  variant="outline"
+                  className="h-12 font-semibold text-base"
+                >
+                  <TrendingUp className="h-5 w-5 mr-2" />
+                  View Reports
+                </Button>
+                <Button
+                  onClick={() => navigate("/settings")}
+                  variant="outline"
+                  className="h-12 font-semibold text-base"
+                >
+                  <Settings className="h-5 w-5 mr-2" />
+                  Settings
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -184,13 +191,13 @@ export default function Dashboard() {
                 {sales.slice(0, 6).map((sale) => (
                   <div
                     key={sale.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-background border border-border hover:bg-muted transition-colors"
+                    className="flex flex-col gap-3 p-4 rounded-lg bg-background border border-border hover:bg-muted transition-colors sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="w-10 h-10 shrink-0 rounded-full bg-accent/10 flex items-center justify-center">
                         <ShoppingCart className="h-5 w-5 text-accent" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-medium text-foreground">
                           {sale.items.reduce((n, li) => n + li.quantity, 0)} items
                         </p>
@@ -199,7 +206,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
-                    <p className="font-semibold text-foreground">
+                    <p className="font-semibold text-foreground sm:text-right">
                       {formatMoney(sale.total, currency)}
                     </p>
                   </div>

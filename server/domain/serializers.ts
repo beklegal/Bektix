@@ -1,4 +1,4 @@
-import type { Product, Sale, SaleLineItem, Shop, ShopPreferences, User } from "@shared/bektix";
+import type { Debtor, Product, Sale, SaleLineItem, Shop, ShopPreferences, User } from "@shared/bektix";
 import { normalizeShopPreferences } from "./preferences.js";
 
 function iso(value: unknown) {
@@ -90,6 +90,7 @@ export function serializeSale(
     amount_paid: number;
     change: number;
     payment_method: string;
+    payer_type: string;
   },
   lineItems: SaleLineItem[],
 ): Sale {
@@ -107,6 +108,31 @@ export function serializeSale(
     amountPaid: saleRow.amount_paid,
     change: saleRow.change,
     paymentMethod: saleRow.payment_method as Sale["paymentMethod"],
+    payerType: saleRow.payer_type as Sale["payerType"],
+  };
+}
+
+export function serializeDebtor(row: {
+  id: string;
+  shop_id: string;
+  name: string;
+  date: unknown;
+  invoice_number: string;
+  amount: number;
+  status: string;
+  created_at: unknown;
+  updated_at: unknown;
+}): Debtor {
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    name: row.name,
+    date: iso(row.date).slice(0, 10),
+    invoiceNumber: row.invoice_number,
+    amount: row.amount,
+    status: row.status as Debtor["status"],
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
   };
 }
 

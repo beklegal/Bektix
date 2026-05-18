@@ -8,6 +8,7 @@ import { productsRouter } from "./routes/products.js";
 import { usersRouter } from "./routes/users.js";
 import { salesRouter } from "./routes/sales.js";
 import { shopRouter } from "./routes/shop.js";
+import { debtorsRouter } from "./routes/debtors.js";
 import {
   apiRateLimit,
   rejectCrossOriginWrites,
@@ -43,6 +44,7 @@ export async function createServer() {
   app.use("/api/products", productsRouter);
   app.use("/api/users", usersRouter);
   app.use("/api/sales", salesRouter);
+  app.use("/api/debtors", debtorsRouter);
 
   return app;
 }

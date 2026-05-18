@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { PaymentMethod } from "@shared/bektix";
+import type { PayerType, PaymentMethod } from "@shared/bektix";
 import AppShell from "@/components/AppShell";
 import { useBektix } from "@/lib/bektix/context";
 import { clampNumber, formatMoney } from "@/lib/bektix/format";
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DollarSign, Minus, Plus, Search, ShoppingCart, Smartphone, Trash2 } from "lucide-react";
+import { Banknote, DollarSign, Landmark, Minus, Plus, Search, ShoppingCart, Smartphone, Trash2 } from "lucide-react";
 
 type CartLine = { productId: string; quantity: number };
 
@@ -30,6 +30,7 @@ export default function Sales() {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [payerType, setPayerType] = useState<PayerType>("walkIn");
   const [amountPaid, setAmountPaid] = useState("");
   const [printReceipt, setPrintReceipt] = useState(false);
 
@@ -108,6 +109,7 @@ export default function Sales() {
   const openPayment = () => {
     if (cart.length === 0) return;
     setPaymentMethod("cash");
+    setPayerType("walkIn");
     setAmountPaid(total.toFixed(2));
     setPrintReceipt(shop?.preferences.autoPrintReceipt ?? false);
     setPaymentOpen(true);
@@ -124,6 +126,7 @@ export default function Sales() {
       const { saleId } = await actions.createSale({
         items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity })),
         paymentMethod,
+        payerType,
         amountPaid: paid,
       });
       setPaymentOpen(false);
@@ -147,9 +150,9 @@ export default function Sales() {
 
   return (
     <AppShell title="POS" description="Fast checkout optimized for real shop use." active="sales">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         {/* Products */}
-        <div className="lg:col-span-2">
+        <div className="min-w-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl font-semibold">Products</h2>
             <div className="relative w-full sm:max-w-md">
@@ -163,16 +166,16 @@ export default function Sales() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
             {filteredProducts.map((product) => (
               <button
                 key={product.id}
                 onClick={() => addToCart(product.id)}
-                className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted"
+                className="min-h-32 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted"
               >
                 <p className="font-semibold text-foreground">{product.name}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{product.category}</p>
-                <div className="mt-4 flex items-end justify-between">
+                <div className="mt-4 flex items-end justify-between gap-3">
                   <p className="text-lg font-bold text-accent">{formatMoney(product.sellingPrice, currency)}</p>
                   <p className="text-xs text-muted-foreground">{product.quantity} left</p>
                 </div>
@@ -192,8 +195,8 @@ export default function Sales() {
         </div>
 
         {/* Cart */}
-        <div className="lg:col-span-1">
-          <Card className="flex flex-col overflow-hidden">
+        <div className="min-w-0">
+          <Card className="flex flex-col overflow-hidden lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)]">
             <div className="flex items-center justify-between border-b border-border p-4">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
@@ -202,7 +205,7 @@ export default function Sales() {
               <p className="text-sm text-muted-foreground">{cartDetailed.length} items</p>
             </div>
 
-            <div className="flex-1 space-y-3 p-4">
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
               {cartDetailed.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
                   <ShoppingCart className="h-10 w-10 text-muted-foreground" />
@@ -228,7 +231,7 @@ export default function Sales() {
                       </Button>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-stretch xl:flex-row xl:items-center">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -298,7 +301,7 @@ export default function Sales() {
 
             <div className="grid gap-2">
               <p className="text-sm font-medium">Payment method</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <button
                   onClick={() => setPaymentMethod("cash")}
                   className={`rounded-xl border-2 p-3 text-left transition-colors ${
@@ -324,6 +327,47 @@ export default function Sales() {
                   </div>
                   <p className="text-xs text-muted-foreground">MOMO / transfer</p>
                 </button>
+                <button
+                  onClick={() => setPaymentMethod("cheque")}
+                  className={`rounded-xl border-2 p-3 text-left transition-colors ${
+                    paymentMethod === "cheque"
+                      ? "border-accent bg-accent/10"
+                      : "border-border bg-background hover:border-accent/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold">Cheque</p>
+                    <Banknote className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Bank cheque</p>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <p className="text-sm font-medium">Payer type</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {[
+                  { value: "private", label: "Private", detail: "Private client" },
+                  { value: "government", label: "Government", detail: "Government payer" },
+                  { value: "walkIn", label: "Walk-in", detail: "In-shop customer" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setPayerType(option.value as PayerType)}
+                    className={`rounded-xl border-2 p-3 text-left transition-colors ${
+                      payerType === option.value
+                        ? "border-accent bg-accent/10"
+                        : "border-border bg-background hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold">{option.label}</p>
+                      {option.value === "government" && <Landmark className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{option.detail}</p>
+                  </button>
+                ))}
               </div>
             </div>
 

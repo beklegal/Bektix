@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
-import type { PaymentMethod } from "@shared/bektix";
+import type { PaymentMethod, PayerType } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
 import { pool } from "../db/pool.js";
 import { serializeSale, serializeSaleLineItem } from "../domain/serializers.js";
@@ -28,7 +28,7 @@ async function fetchSaleWithItems(shopId: string, saleId: string) {
   const saleResult = await pool.query(
     `
       SELECT id, shop_id, receipt_number, created_at, cashier_user_id, cashier_name,
-             subtotal, tax, total, amount_paid, change, payment_method
+             subtotal, tax, total, amount_paid, change, payment_method, payer_type
       FROM sales
       WHERE id = $1 AND shop_id = $2
       LIMIT 1
@@ -58,7 +58,7 @@ salesRouter.get("/", async (req, res) => {
   const salesResult = await pool.query(
     `
       SELECT id, shop_id, receipt_number, created_at, cashier_user_id, cashier_name,
-             subtotal, tax, total, amount_paid, change, payment_method
+             subtotal, tax, total, amount_paid, change, payment_method, payer_type
       FROM sales
       WHERE shop_id = $1
       ORDER BY created_at DESC
@@ -104,7 +104,8 @@ const createSaleSchema = z.object({
       }),
     )
     .min(1),
-  paymentMethod: z.enum(["cash", "mobileMoney"]),
+  paymentMethod: z.enum(["cash", "mobileMoney", "cheque"]),
+  payerType: z.enum(["private", "government", "walkIn"]),
   amountPaid: z.number().min(0),
 });
 
@@ -184,9 +185,9 @@ salesRouter.post("/", async (req, res) => {
           `
             INSERT INTO sales (
               id, shop_id, receipt_number, cashier_user_id, cashier_name,
-              subtotal, tax, total, amount_paid, change, payment_method
+              subtotal, tax, total, amount_paid, change, payment_method, payer_type
             )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
           `,
           [
             saleId,
@@ -200,6 +201,7 @@ salesRouter.post("/", async (req, res) => {
             parsed.data.amountPaid,
             change,
             parsed.data.paymentMethod satisfies PaymentMethod,
+            parsed.data.payerType satisfies PayerType,
           ],
         );
         break;

@@ -1,7 +1,9 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  Debtor,
   PaymentMethod,
+  PayerType,
   Product,
   Sale,
   Session,
@@ -9,6 +11,7 @@ import type {
   User,
   UserRole,
 } from "@shared/bektix";
+import type { AuthResponse } from "@shared/api";
 import type { BusinessType, Shop } from "@shared/bektix";
 import { api } from "@/lib/bektix/api";
 
@@ -22,6 +25,7 @@ type BektixContextValue = {
   products: Product[];
   users: User[];
   sales: Sale[];
+  debtors: Debtor[];
   actions: {
     login: (input: { email: string; password: string }) => Promise<void>;
     logout: () => Promise<void>;
@@ -45,17 +49,25 @@ type BektixContextValue = {
     createSale: (input: {
       items: Array<{ productId: string; quantity: number }>;
       paymentMethod: PaymentMethod;
+      payerType: PayerType;
       amountPaid: number;
     }) => Promise<{ saleId: string }>;
+    addDebtor: (input: Pick<Debtor, "name" | "date" | "invoiceNumber" | "amount">) => Promise<void>;
+    updateDebtor: (
+      debtorId: string,
+      patch: Partial<Pick<Debtor, "name" | "date" | "invoiceNumber" | "amount" | "status">>,
+    ) => Promise<void>;
+    deleteDebtor: (debtorId: string) => Promise<void>;
   };
 };
 
 const BektixContext = React.createContext<BektixContextValue | null>(null);
+const LIVE_SYNC_INTERVAL_MS = 5_000;
 
 export function BektixProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
-  const meQuery = useQuery({
+  const meQuery = useQuery<AuthResponse | null>({
     queryKey: ["auth", "me"],
     queryFn: api.me,
     retry: false,
@@ -63,7 +75,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
 
   const authStatus: AuthStatus = meQuery.isPending
     ? "loading"
-    : meQuery.isSuccess
+    : meQuery.isSuccess && meQuery.data
       ? "authenticated"
       : "unauthenticated";
 
@@ -75,18 +87,44 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["products"],
     queryFn: api.getProducts,
     enabled: authStatus === "authenticated",
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
   });
 
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: api.getUsers,
     enabled: authStatus === "authenticated",
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
   });
 
   const salesQuery = useQuery({
     queryKey: ["sales"],
     queryFn: api.getSales,
     enabled: authStatus === "authenticated",
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
+  });
+
+  const debtorsQuery = useQuery({
+    queryKey: ["debtors"],
+    queryFn: api.getDebtors,
+    enabled: authStatus === "authenticated",
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
   });
 
   const actions = React.useMemo<BektixContextValue["actions"]>(() => {
@@ -97,27 +135,32 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries({ queryKey: ["products"] });
         await queryClient.invalidateQueries({ queryKey: ["users"] });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });
+        await queryClient.invalidateQueries({ queryKey: ["debtors"] });
       },
       logout: async () => {
         await api.logout();
-        queryClient.removeQueries({ queryKey: ["auth", "me"] });
+        queryClient.setQueryData(["auth", "me"], null);
         queryClient.removeQueries({ queryKey: ["products"] });
         queryClient.removeQueries({ queryKey: ["users"] });
         queryClient.removeQueries({ queryKey: ["sales"] });
+        queryClient.removeQueries({ queryKey: ["debtors"] });
       },
       updateShopDetails: async (patch) => {
         const nextShop = await api.updateShop(patch);
         queryClient.setQueryData(["auth", "me"], (prev: any) => (prev ? { ...prev, shop: nextShop } : prev));
+        await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
       },
       updateShopPreferences: async (patch) => {
         const nextShop = await api.updateShopPreferences(patch);
         queryClient.setQueryData(["auth", "me"], (prev: any) => (prev ? { ...prev, shop: nextShop } : prev));
+        await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
       },
       resetSystemData: async () => {
         await api.resetSystemData();
         await queryClient.invalidateQueries({ queryKey: ["products"] });
         await queryClient.invalidateQueries({ queryKey: ["users"] });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });
+        await queryClient.invalidateQueries({ queryKey: ["debtors"] });
       },
       addProduct: async (input) => {
         await api.createProduct(input);
@@ -144,11 +187,23 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await api.deleteUser(userId);
         await queryClient.invalidateQueries({ queryKey: ["users"] });
       },
-      createSale: async ({ items, paymentMethod, amountPaid }) => {
-        const sale = await api.createSale({ items, paymentMethod, amountPaid });
+      createSale: async ({ items, paymentMethod, payerType, amountPaid }) => {
+        const sale = await api.createSale({ items, paymentMethod, payerType, amountPaid });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });
         await queryClient.invalidateQueries({ queryKey: ["products"] });
         return { saleId: sale.id };
+      },
+      addDebtor: async (input) => {
+        await api.createDebtor(input);
+        await queryClient.invalidateQueries({ queryKey: ["debtors"] });
+      },
+      updateDebtor: async (debtorId, patch) => {
+        await api.updateDebtor(debtorId, patch);
+        await queryClient.invalidateQueries({ queryKey: ["debtors"] });
+      },
+      deleteDebtor: async (debtorId) => {
+        await api.deleteDebtor(debtorId);
+        await queryClient.invalidateQueries({ queryKey: ["debtors"] });
       },
     };
   }, [queryClient]);
@@ -162,9 +217,20 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       products: productsQuery.data ?? [],
       users: usersQuery.data ?? [],
       sales: salesQuery.data ?? [],
+      debtors: debtorsQuery.data ?? [],
       actions,
     }),
-    [actions, authStatus, productsQuery.data, salesQuery.data, session, shop, user, usersQuery.data],
+    [
+      actions,
+      authStatus,
+      debtorsQuery.data,
+      productsQuery.data,
+      salesQuery.data,
+      session,
+      shop,
+      user,
+      usersQuery.data,
+    ],
   );
 
   return <BektixContext.Provider value={value}>{children}</BektixContext.Provider>;

@@ -1,12 +1,14 @@
 import type {
   AuthLoginRequest,
   AuthResponse,
+  CreateDebtorRequest,
   CreateProductRequest,
   CreateSaleRequest,
   CreateUserRequest,
+  UpdateDebtorRequest,
   UpdateProductRequest,
 } from "@shared/api";
-import type { Product, Sale, Shop, ShopPreferences, User } from "@shared/bektix";
+import type { Debtor, Product, Sale, Shop, ShopPreferences, User } from "@shared/bektix";
 
 async function parseErrorMessage(response: Response) {
   try {
@@ -72,4 +74,12 @@ export const api = {
   createSale: (input: CreateSaleRequest) =>
     apiRequest<Sale>("/api/sales", { method: "POST", json: input }),
   getSale: (saleId: string) => apiRequest<Sale>(`/api/sales/${saleId}`),
+
+  getDebtors: () => apiRequest<Debtor[]>("/api/debtors"),
+  createDebtor: (input: CreateDebtorRequest) =>
+    apiRequest<Debtor>("/api/debtors", { method: "POST", json: input }),
+  updateDebtor: (debtorId: string, patch: UpdateDebtorRequest) =>
+    apiRequest<Debtor>(`/api/debtors/${debtorId}`, { method: "PATCH", json: patch }),
+  deleteDebtor: (debtorId: string) =>
+    apiRequest<void>(`/api/debtors/${debtorId}`, { method: "DELETE" }),
 };

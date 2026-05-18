@@ -227,8 +227,8 @@ export default function Settings() {
       <Card className="mt-6 p-6">
         <p className="text-lg font-semibold">Features</p>
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="flex items-center justify-between rounded-xl border border-border bg-muted p-4">
-            <div>
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="font-medium">Expiry tracking</p>
               <p className="text-sm text-muted-foreground">Track product expiry dates</p>
             </div>
@@ -238,8 +238,8 @@ export default function Settings() {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-border bg-muted p-4">
-            <div>
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="font-medium">Product variants</p>
               <p className="text-sm text-muted-foreground">Sizes, colors, and variations</p>
             </div>
@@ -249,8 +249,8 @@ export default function Settings() {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-border bg-muted p-4">
-            <div>
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <p className="font-medium">Auto-print receipt</p>
               <p className="text-sm text-muted-foreground">Prompt to print after each sale</p>
             </div>
@@ -260,8 +260,8 @@ export default function Settings() {
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-border bg-muted p-4 md:col-span-2">
-            <div>
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted p-4 sm:flex-row sm:items-center sm:justify-between md:col-span-2">
+            <div className="min-w-0">
               <p className="font-medium">Low stock alerts</p>
               <p className="text-sm text-muted-foreground">Warn when stock falls below a threshold</p>
             </div>

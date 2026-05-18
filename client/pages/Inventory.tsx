@@ -248,7 +248,7 @@ export default function Inventory() {
         </div>
         <Button
           onClick={openAdd}
-          className="h-11 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+          className="h-11 w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold sm:w-auto"
         >
           <Plus className="h-5 w-5 mr-2" />
           Add Product
@@ -396,7 +396,7 @@ export default function Inventory() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => (open ? setDialogOpen(true) : closeDialog())}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit product" : "Add product"}</DialogTitle>
             <DialogDescription>
