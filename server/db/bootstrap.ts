@@ -60,8 +60,7 @@ export async function bootstrapSingleShop() {
             email_lower = $4,
             role = 'admin',
             status = 'active',
-            password_hash = $5,
-            session_version = session_version + 1
+            password_hash = $5
         WHERE id = $6
       `,
       [shopId, JILKEM_OWNER_NAME, email, emailLower, passwordHash, existing.rows[0].id],

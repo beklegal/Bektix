@@ -13,11 +13,15 @@ type UserSessionToken = {
 };
 
 function cookieOptions(): CookieOptions {
-  const isProd = env.NODE_ENV === "production";
+  const isSecureRequest =
+    env.NODE_ENV === "production" ||
+    process.env.VERCEL === "1" ||
+    process.env.VERCEL_ENV !== undefined;
+
   return {
     httpOnly: true,
     sameSite: "lax",
-    secure: isProd,
+    secure: isSecureRequest,
     path: "/",
   };
 }

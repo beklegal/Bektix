@@ -7,13 +7,23 @@ const { Pool, types } = pg;
 // parsing as number is acceptable and simplifies the client model.
 types.setTypeParser(types.builtins.NUMERIC, (value) => Number.parseFloat(value));
 
-const shouldUseSsl = /\bsslmode=(require|verify-ca|verify-full|no-verify)\b/i.test(
-  env.DATABASE_URL,
-)
-  || /\bssl=true\b/i.test(env.DATABASE_URL)
-  || /\bneon\.tech\b/i.test(env.DATABASE_URL);
+function normalizeDatabaseUrl(value: string) {
+  const url = new URL(value);
+  const sslMode = url.searchParams.get("sslmode");
+
+  if (sslMode && ["prefer", "require", "verify-ca"].includes(sslMode.toLowerCase())) {
+    url.searchParams.set("sslmode", "verify-full");
+  }
+
+  if (!sslMode && /\bneon\.tech$/i.test(url.hostname)) {
+    url.searchParams.set("sslmode", "verify-full");
+  }
+
+  return url.toString();
+}
+
+const connectionString = normalizeDatabaseUrl(env.DATABASE_URL);
 
 export const pool = new Pool({
-  connectionString: env.DATABASE_URL,
-  ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
+  connectionString,
 });
