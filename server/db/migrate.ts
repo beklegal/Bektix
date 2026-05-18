@@ -4,6 +4,7 @@ export async function migrate() {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(7182026051901)");
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS shops (
