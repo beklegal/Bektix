@@ -13,6 +13,8 @@ import {
   ClipboardList,
   Landmark,
   ReceiptText,
+  TrendingUp,
+  UserCog,
   UsersRound,
 } from "lucide-react";
 
@@ -64,6 +66,27 @@ export default function AppsServices() {
       icon: Landmark,
       badge: `${bankDeposits.length} deposits`,
     },
+    {
+      title: "Debtors",
+      description: "Track customer invoices, unpaid balances, and paid debtor records.",
+      path: "/debtors",
+      icon: ReceiptText,
+      badge: "Customer credit",
+    },
+    {
+      title: "Reports",
+      description: "Sales, profit, transactions, and best-selling product analytics.",
+      path: "/reports",
+      icon: TrendingUp,
+      badge: "Analytics",
+    },
+    {
+      title: "Users",
+      description: "Manage staff accounts, roles, and active or inactive access.",
+      path: "/users",
+      icon: UserCog,
+      badge: "Admin",
+    },
   ];
 
   return (
@@ -91,7 +114,7 @@ export default function AppsServices() {
         </Card>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modules.map((module) => {
           const Icon = module.icon;
           return (

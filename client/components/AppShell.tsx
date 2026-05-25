@@ -5,13 +5,10 @@ import {
   Home,
   Package,
   ShoppingCart,
-  TrendingUp,
-  Users,
   Settings,
   LogOut,
   Menu,
   X,
-  FileText,
   Grid3X3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,10 +35,7 @@ const navigation = [
   { label: "Dashboard", path: "/dashboard", key: "dashboard", icon: Home },
   { label: "Inventory", path: "/inventory", key: "inventory", icon: Package },
   { label: "POS", path: "/sales", key: "sales", icon: ShoppingCart },
-  { label: "Reports", path: "/reports", key: "reports", icon: TrendingUp },
-  { label: "Debtors", path: "/debtors", key: "debtors", icon: FileText },
   { label: "Apps & Services", path: "/apps-services", key: "apps-services", icon: Grid3X3 },
-  { label: "Users", path: "/users", key: "users", icon: Users },
   { label: "Settings", path: "/settings", key: "settings", icon: Settings },
 ];
 
