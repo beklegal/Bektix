@@ -1,14 +1,28 @@
 import type {
   AuthLoginRequest,
   AuthResponse,
+  CreateBankDepositRequest,
   CreateDebtorRequest,
+  CreateEmployeeRequest,
+  CreatePayrollRunRequest,
   CreateProductRequest,
+  CreatePurchaseInvoiceRequest,
+  CreatePurchaseOrderRequest,
   CreateSaleRequest,
+  CreateSupplierPaymentRequest,
+  CreateSupplierRequest,
+  CreditorsPayload,
+  PayrollPayload,
+  UpdateBankDepositStatusRequest,
   CreateUserRequest,
   UpdateDebtorRequest,
+  UpdateEmployeeRequest,
+  UpdatePayrollRunRequest,
   UpdateProductRequest,
+  UpdatePurchaseOrderStatusRequest,
+  UpdateSupplierRequest,
 } from "@shared/api";
-import type { Debtor, Product, Sale, Shop, ShopPreferences, User } from "@shared/bektix";
+import type { BankDeposit, Debtor, Product, Sale, Shop, ShopPreferences, User } from "@shared/bektix";
 
 async function parseErrorMessage(response: Response) {
   try {
@@ -82,4 +96,61 @@ export const api = {
     apiRequest<Debtor>(`/api/debtors/${debtorId}`, { method: "PATCH", json: patch }),
   deleteDebtor: (debtorId: string) =>
     apiRequest<void>(`/api/debtors/${debtorId}`, { method: "DELETE" }),
+
+  getPayroll: () => apiRequest<PayrollPayload>("/api/payroll"),
+  createEmployee: (input: CreateEmployeeRequest) =>
+    apiRequest<PayrollPayload["employees"][number]>("/api/payroll/employees", {
+      method: "POST",
+      json: input,
+    }),
+  updateEmployee: (employeeId: string, patch: UpdateEmployeeRequest) =>
+    apiRequest<PayrollPayload["employees"][number]>(`/api/payroll/employees/${employeeId}`, {
+      method: "PATCH",
+      json: patch,
+    }),
+  createPayrollRun: (input: CreatePayrollRunRequest) =>
+    apiRequest<PayrollPayload["runs"][number]>("/api/payroll/runs", { method: "POST", json: input }),
+  updatePayrollRun: (runId: string, patch: UpdatePayrollRunRequest) =>
+    apiRequest<PayrollPayload["runs"][number]>(`/api/payroll/runs/${runId}`, {
+      method: "PATCH",
+      json: patch,
+    }),
+
+  getCreditors: () => apiRequest<CreditorsPayload>("/api/creditors"),
+  createSupplier: (input: CreateSupplierRequest) =>
+    apiRequest<CreditorsPayload["suppliers"][number]>("/api/creditors/suppliers", {
+      method: "POST",
+      json: input,
+    }),
+  updateSupplier: (supplierId: string, patch: UpdateSupplierRequest) =>
+    apiRequest<CreditorsPayload["suppliers"][number]>(`/api/creditors/suppliers/${supplierId}`, {
+      method: "PATCH",
+      json: patch,
+    }),
+  createPurchaseOrder: (input: CreatePurchaseOrderRequest) =>
+    apiRequest<CreditorsPayload["purchaseOrders"][number]>("/api/creditors/purchase-orders", {
+      method: "POST",
+      json: input,
+    }),
+  updatePurchaseOrderStatus: (orderId: string, patch: UpdatePurchaseOrderStatusRequest) =>
+    apiRequest<CreditorsPayload["purchaseOrders"][number]>(
+      `/api/creditors/purchase-orders/${orderId}/status`,
+      { method: "PATCH", json: patch },
+    ),
+  createPurchaseInvoice: (input: CreatePurchaseInvoiceRequest) =>
+    apiRequest<CreditorsPayload["purchaseInvoices"][number]>("/api/creditors/purchase-invoices", {
+      method: "POST",
+      json: input,
+    }),
+  createSupplierPayment: (input: CreateSupplierPaymentRequest) =>
+    apiRequest<CreditorsPayload>("/api/creditors/payments", { method: "POST", json: input }),
+
+  getBankDeposits: () => apiRequest<BankDeposit[]>("/api/banking/deposits"),
+  createBankDeposit: (input: CreateBankDepositRequest) =>
+    apiRequest<BankDeposit>("/api/banking/deposits", { method: "POST", json: input }),
+  updateBankDepositStatus: (depositId: string, patch: UpdateBankDepositStatusRequest) =>
+    apiRequest<BankDeposit>(`/api/banking/deposits/${depositId}/status`, {
+      method: "PATCH",
+      json: patch,
+    }),
 };

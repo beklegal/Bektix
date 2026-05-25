@@ -1,4 +1,21 @@
-import type { Debtor, Product, Sale, SaleLineItem, Shop, ShopPreferences, User } from "@shared/bektix";
+import type {
+  BankDeposit,
+  BankDepositLineItem,
+  Debtor,
+  Employee,
+  PayrollRun,
+  Product,
+  PurchaseInvoice,
+  PurchaseLineItem,
+  PurchaseOrder,
+  Sale,
+  SaleLineItem,
+  Shop,
+  ShopPreferences,
+  Supplier,
+  SupplierPayment,
+  User,
+} from "@shared/bektix";
 import { normalizeShopPreferences } from "./preferences.js";
 
 function iso(value: unknown) {
@@ -149,5 +166,255 @@ export function serializeSaleLineItem(row: {
     quantity: row.quantity,
     unitPrice: row.unit_price,
     unitCost: row.unit_cost,
+  };
+}
+
+export function serializeEmployee(row: {
+  id: string;
+  shop_id: string;
+  name: string;
+  title: string;
+  pay_type: string;
+  base_pay: number;
+  status: string;
+  created_at: unknown;
+  updated_at: unknown;
+}): Employee {
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    name: row.name,
+    title: row.title,
+    payType: row.pay_type as Employee["payType"],
+    basePay: Number(row.base_pay),
+    status: row.status as Employee["status"],
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
+  };
+}
+
+export function serializePayrollRun(row: {
+  id: string;
+  shop_id: string;
+  employee_id: string;
+  employee_name: string;
+  period_start: unknown;
+  period_end: unknown;
+  pay_date: unknown;
+  gross_pay: number;
+  allowances: number;
+  deductions: number;
+  net_pay: number;
+  payment_method: string;
+  status: string;
+  created_at: unknown;
+  updated_at: unknown;
+}): PayrollRun {
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    employeeId: row.employee_id,
+    employeeName: row.employee_name,
+    periodStart: iso(row.period_start).slice(0, 10),
+    periodEnd: iso(row.period_end).slice(0, 10),
+    payDate: iso(row.pay_date).slice(0, 10),
+    grossPay: Number(row.gross_pay),
+    allowances: Number(row.allowances),
+    deductions: Number(row.deductions),
+    netPay: Number(row.net_pay),
+    paymentMethod: row.payment_method as PayrollRun["paymentMethod"],
+    status: row.status as PayrollRun["status"],
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
+  };
+}
+
+export function serializeSupplier(row: {
+  id: string;
+  shop_id: string;
+  name: string;
+  contact_name: string | null;
+  phone: string | null;
+  email: string | null;
+  status: string;
+  created_at: unknown;
+  updated_at: unknown;
+}): Supplier {
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    name: row.name,
+    contactName: row.contact_name ?? undefined,
+    phone: row.phone ?? undefined,
+    email: row.email ?? undefined,
+    status: row.status as Supplier["status"],
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
+  };
+}
+
+export function serializePurchaseLineItem(row: {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_cost: number;
+}): PurchaseLineItem {
+  return {
+    productId: row.product_id,
+    productName: row.product_name,
+    quantity: Number(row.quantity),
+    unitCost: Number(row.unit_cost),
+  };
+}
+
+export function serializePurchaseOrder(
+  row: {
+    id: string;
+    shop_id: string;
+    supplier_id: string;
+    supplier_name: string;
+    order_number: string;
+    order_date: unknown;
+    expected_date: unknown | null;
+    status: string;
+    total: number;
+    created_at: unknown;
+    updated_at: unknown;
+  },
+  items: PurchaseLineItem[],
+): PurchaseOrder {
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    supplierId: row.supplier_id,
+    supplierName: row.supplier_name,
+    orderNumber: row.order_number,
+    orderDate: iso(row.order_date).slice(0, 10),
+    expectedDate: row.expected_date ? iso(row.expected_date).slice(0, 10) : undefined,
+    status: row.status as PurchaseOrder["status"],
+    items,
+    total: Number(row.total),
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
+  };
+}
+
+export function serializePurchaseInvoice(
+  row: {
+    id: string;
+    shop_id: string;
+    supplier_id: string;
+    supplier_name: string;
+    purchase_order_id: string | null;
+    invoice_number: string;
+    invoice_date: unknown;
+    due_date: unknown | null;
+    subtotal: number;
+    amount_paid: number;
+    status: string;
+    created_at: unknown;
+    updated_at: unknown;
+  },
+  items: PurchaseLineItem[],
+): PurchaseInvoice {
+  const subtotal = Number(row.subtotal);
+  const amountPaid = Number(row.amount_paid);
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    supplierId: row.supplier_id,
+    supplierName: row.supplier_name,
+    purchaseOrderId: row.purchase_order_id ?? undefined,
+    invoiceNumber: row.invoice_number,
+    invoiceDate: iso(row.invoice_date).slice(0, 10),
+    dueDate: row.due_date ? iso(row.due_date).slice(0, 10) : undefined,
+    items,
+    subtotal,
+    amountPaid,
+    balance: Math.max(0, subtotal - amountPaid),
+    status: row.status as PurchaseInvoice["status"],
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
+  };
+}
+
+export function serializeSupplierPayment(row: {
+  id: string;
+  shop_id: string;
+  supplier_id: string;
+  supplier_name: string;
+  purchase_invoice_id: string;
+  invoice_number: string;
+  payment_date: unknown;
+  amount: number;
+  payment_method: string;
+  reference: string | null;
+  created_at: unknown;
+}): SupplierPayment {
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    supplierId: row.supplier_id,
+    supplierName: row.supplier_name,
+    purchaseInvoiceId: row.purchase_invoice_id,
+    invoiceNumber: row.invoice_number,
+    paymentDate: iso(row.payment_date).slice(0, 10),
+    amount: Number(row.amount),
+    paymentMethod: row.payment_method as SupplierPayment["paymentMethod"],
+    reference: row.reference ?? undefined,
+    createdAt: iso(row.created_at),
+  };
+}
+
+export function serializeBankDepositLineItem(row: {
+  id: string;
+  source_type: string;
+  source_reference: string | null;
+  description: string;
+  payment_method: string;
+  amount: number;
+}): BankDepositLineItem {
+  return {
+    id: row.id,
+    sourceType: row.source_type as BankDepositLineItem["sourceType"],
+    sourceReference: row.source_reference ?? undefined,
+    description: row.description,
+    paymentMethod: row.payment_method as BankDepositLineItem["paymentMethod"],
+    amount: Number(row.amount),
+  };
+}
+
+export function serializeBankDeposit(
+  row: {
+    id: string;
+    shop_id: string;
+    deposit_date: unknown;
+    bank_name: string;
+    reference: string | null;
+    status: string;
+    created_at: unknown;
+    updated_at: unknown;
+  },
+  lines: BankDepositLineItem[],
+): BankDeposit {
+  const totalCash = lines
+    .filter((line) => line.paymentMethod === "cash")
+    .reduce((sum, line) => sum + line.amount, 0);
+  const totalCheque = lines
+    .filter((line) => line.paymentMethod === "cheque")
+    .reduce((sum, line) => sum + line.amount, 0);
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    depositDate: iso(row.deposit_date).slice(0, 10),
+    bankName: row.bank_name,
+    reference: row.reference ?? undefined,
+    status: row.status as BankDeposit["status"],
+    lines,
+    totalCash,
+    totalCheque,
+    total: totalCash + totalCheque,
+    createdAt: iso(row.created_at),
+    updatedAt: iso(row.updated_at),
   };
 }

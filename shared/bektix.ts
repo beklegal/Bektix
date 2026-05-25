@@ -11,6 +11,18 @@ export type UserStatus = "active" | "inactive";
 export type PaymentMethod = "cash" | "mobileMoney" | "cheque";
 export type PayerType = "private" | "government" | "walkIn";
 export type DebtorStatus = "unpaid" | "paid";
+export type SimplePaymentMethod = "cash" | "cheque";
+export type EmployeePayType = "salary" | "hourly";
+export type EmployeeStatus = "active" | "inactive";
+export type PayrollRunStatus = "draft" | "paid" | "closed";
+export type PurchaseOrderStatus = "draft" | "ordered" | "received" | "cancelled";
+export type PurchaseInvoiceStatus = "unpaid" | "part_paid" | "paid";
+export type BankDepositStatus = "draft" | "sent" | "confirmed";
+export type BankDepositSourceType =
+  | "sale"
+  | "debtor_payment"
+  | "supplier_refund"
+  | "manual";
 
 export type ShopStatus = "active" | "inactive";
 
@@ -96,6 +108,126 @@ export interface Debtor {
   status: DebtorStatus;
   createdAt: string; // ISO
   updatedAt: string; // ISO
+}
+
+export interface Employee {
+  id: string;
+  shopId: string;
+  name: string;
+  title: string;
+  payType: EmployeePayType;
+  basePay: number;
+  status: EmployeeStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PayrollRun {
+  id: string;
+  shopId: string;
+  employeeId: string;
+  employeeName: string;
+  periodStart: string;
+  periodEnd: string;
+  payDate: string;
+  grossPay: number;
+  allowances: number;
+  deductions: number;
+  netPay: number;
+  paymentMethod: SimplePaymentMethod;
+  status: PayrollRunStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Supplier {
+  id: string;
+  shopId: string;
+  name: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  status: EmployeeStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseLineItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  shopId: string;
+  supplierId: string;
+  supplierName: string;
+  orderNumber: string;
+  orderDate: string;
+  expectedDate?: string;
+  status: PurchaseOrderStatus;
+  items: PurchaseLineItem[];
+  total: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseInvoice {
+  id: string;
+  shopId: string;
+  supplierId: string;
+  supplierName: string;
+  purchaseOrderId?: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate?: string;
+  items: PurchaseLineItem[];
+  subtotal: number;
+  amountPaid: number;
+  balance: number;
+  status: PurchaseInvoiceStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierPayment {
+  id: string;
+  shopId: string;
+  supplierId: string;
+  supplierName: string;
+  purchaseInvoiceId: string;
+  invoiceNumber: string;
+  paymentDate: string;
+  amount: number;
+  paymentMethod: SimplePaymentMethod;
+  reference?: string;
+  createdAt: string;
+}
+
+export interface BankDepositLineItem {
+  id: string;
+  sourceType: BankDepositSourceType;
+  sourceReference?: string;
+  description: string;
+  paymentMethod: SimplePaymentMethod;
+  amount: number;
+}
+
+export interface BankDeposit {
+  id: string;
+  shopId: string;
+  depositDate: string;
+  bankName: string;
+  reference?: string;
+  status: BankDepositStatus;
+  lines: BankDepositLineItem[];
+  totalCash: number;
+  totalCheque: number;
+  total: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Session {

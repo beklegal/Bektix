@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   FileText,
+  Grid3X3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBektix } from "@/lib/bektix/context";
@@ -22,6 +23,7 @@ type AppShellSection =
   | "sales"
   | "reports"
   | "debtors"
+  | "apps-services"
   | "users"
   | "settings";
 
@@ -38,6 +40,7 @@ const navigation = [
   { label: "POS", path: "/sales", key: "sales", icon: ShoppingCart },
   { label: "Reports", path: "/reports", key: "reports", icon: TrendingUp },
   { label: "Debtors", path: "/debtors", key: "debtors", icon: FileText },
+  { label: "Apps & Services", path: "/apps-services", key: "apps-services", icon: Grid3X3 },
   { label: "Users", path: "/users", key: "users", icon: Users },
   { label: "Settings", path: "/settings", key: "settings", icon: Settings },
 ];
@@ -56,7 +59,12 @@ export default function AppShell({ title, description, active, children }: AppSh
 
   const allowedNav = navigation.filter((item) => {
     if (user?.role === "admin") return true;
-    if (item.key === "users" || item.key === "settings" || item.key === "reports") return false;
+    if (
+      item.key === "users" ||
+      item.key === "settings" ||
+      item.key === "reports" ||
+      item.key === "apps-services"
+    ) return false;
     return true;
   });
 

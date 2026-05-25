@@ -1,13 +1,21 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  BankDeposit,
   Debtor,
+  Employee,
   PaymentMethod,
   PayerType,
+  PayrollRun,
   Product,
+  PurchaseInvoice,
+  PurchaseLineItem,
+  PurchaseOrder,
   Sale,
   Session,
   ShopPreferences,
+  Supplier,
+  SupplierPayment,
   User,
   UserRole,
 } from "@shared/bektix";
@@ -26,6 +34,13 @@ type BektixContextValue = {
   users: User[];
   sales: Sale[];
   debtors: Debtor[];
+  employees: Employee[];
+  payrollRuns: PayrollRun[];
+  suppliers: Supplier[];
+  purchaseOrders: PurchaseOrder[];
+  purchaseInvoices: PurchaseInvoice[];
+  supplierPayments: SupplierPayment[];
+  bankDeposits: BankDeposit[];
   actions: {
     login: (input: { email: string; password: string }) => Promise<void>;
     logout: () => Promise<void>;
@@ -58,6 +73,75 @@ type BektixContextValue = {
       patch: Partial<Pick<Debtor, "name" | "date" | "invoiceNumber" | "amount" | "status">>,
     ) => Promise<void>;
     deleteDebtor: (debtorId: string) => Promise<void>;
+    addEmployee: (input: Pick<Employee, "name" | "title" | "payType" | "basePay">) => Promise<void>;
+    updateEmployee: (
+      employeeId: string,
+      patch: Partial<Pick<Employee, "name" | "title" | "payType" | "basePay" | "status">>,
+    ) => Promise<void>;
+    addPayrollRun: (
+      input: Pick<
+        PayrollRun,
+        | "employeeId"
+        | "periodStart"
+        | "periodEnd"
+        | "payDate"
+        | "grossPay"
+        | "allowances"
+        | "deductions"
+        | "paymentMethod"
+      >,
+    ) => Promise<void>;
+    updatePayrollRun: (
+      runId: string,
+      patch: Partial<
+        Pick<
+          PayrollRun,
+          | "periodStart"
+          | "periodEnd"
+          | "payDate"
+          | "grossPay"
+          | "allowances"
+          | "deductions"
+          | "paymentMethod"
+          | "status"
+        >
+      >,
+    ) => Promise<void>;
+    addSupplier: (input: Pick<Supplier, "name" | "contactName" | "phone" | "email">) => Promise<void>;
+    updateSupplier: (
+      supplierId: string,
+      patch: Partial<Pick<Supplier, "name" | "contactName" | "phone" | "email" | "status">>,
+    ) => Promise<void>;
+    addPurchaseOrder: (input: {
+      supplierId: string;
+      orderDate: string;
+      expectedDate?: string;
+      items: PurchaseLineItem[];
+    }) => Promise<void>;
+    updatePurchaseOrderStatus: (orderId: string, status: PurchaseOrder["status"]) => Promise<void>;
+    addPurchaseInvoice: (input: {
+      supplierId: string;
+      purchaseOrderId?: string;
+      invoiceNumber: string;
+      invoiceDate: string;
+      dueDate?: string;
+      items: PurchaseLineItem[];
+    }) => Promise<void>;
+    addSupplierPayment: (input: {
+      purchaseInvoiceId: string;
+      paymentDate: string;
+      amount: number;
+      paymentMethod: PayrollRun["paymentMethod"];
+      reference?: string;
+    }) => Promise<void>;
+    addBankDeposit: (input: {
+      depositDate: string;
+      bankName: string;
+      reference?: string;
+      status: BankDeposit["status"];
+      lines: Array<Omit<BankDeposit["lines"][number], "id">>;
+    }) => Promise<void>;
+    updateBankDepositStatus: (depositId: string, status: BankDeposit["status"]) => Promise<void>;
   };
 };
 
@@ -127,6 +211,39 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
     refetchOnWindowFocus: "always",
   });
 
+  const payrollQuery = useQuery({
+    queryKey: ["payroll"],
+    queryFn: api.getPayroll,
+    enabled: authStatus === "authenticated" && user?.role === "admin",
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
+  });
+
+  const creditorsQuery = useQuery({
+    queryKey: ["creditors"],
+    queryFn: api.getCreditors,
+    enabled: authStatus === "authenticated" && user?.role === "admin",
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
+  });
+
+  const bankDepositsQuery = useQuery({
+    queryKey: ["bankDeposits"],
+    queryFn: api.getBankDeposits,
+    enabled: authStatus === "authenticated" && user?.role === "admin",
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
+  });
+
   const actions = React.useMemo<BektixContextValue["actions"]>(() => {
     return {
       login: async ({ email, password }) => {
@@ -136,6 +253,9 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries({ queryKey: ["users"] });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });
         await queryClient.invalidateQueries({ queryKey: ["debtors"] });
+        await queryClient.invalidateQueries({ queryKey: ["payroll"] });
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+        await queryClient.invalidateQueries({ queryKey: ["bankDeposits"] });
       },
       logout: async () => {
         await api.logout();
@@ -144,6 +264,9 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         queryClient.removeQueries({ queryKey: ["users"] });
         queryClient.removeQueries({ queryKey: ["sales"] });
         queryClient.removeQueries({ queryKey: ["debtors"] });
+        queryClient.removeQueries({ queryKey: ["payroll"] });
+        queryClient.removeQueries({ queryKey: ["creditors"] });
+        queryClient.removeQueries({ queryKey: ["bankDeposits"] });
       },
       updateShopDetails: async (patch) => {
         const nextShop = await api.updateShop(patch);
@@ -161,6 +284,9 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries({ queryKey: ["users"] });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });
         await queryClient.invalidateQueries({ queryKey: ["debtors"] });
+        await queryClient.invalidateQueries({ queryKey: ["payroll"] });
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+        await queryClient.invalidateQueries({ queryKey: ["bankDeposits"] });
       },
       addProduct: async (input) => {
         await api.createProduct(input);
@@ -205,6 +331,55 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await api.deleteDebtor(debtorId);
         await queryClient.invalidateQueries({ queryKey: ["debtors"] });
       },
+      addEmployee: async (input) => {
+        await api.createEmployee(input);
+        await queryClient.invalidateQueries({ queryKey: ["payroll"] });
+      },
+      updateEmployee: async (employeeId, patch) => {
+        await api.updateEmployee(employeeId, patch);
+        await queryClient.invalidateQueries({ queryKey: ["payroll"] });
+      },
+      addPayrollRun: async (input) => {
+        await api.createPayrollRun(input);
+        await queryClient.invalidateQueries({ queryKey: ["payroll"] });
+      },
+      updatePayrollRun: async (runId, patch) => {
+        await api.updatePayrollRun(runId, patch);
+        await queryClient.invalidateQueries({ queryKey: ["payroll"] });
+      },
+      addSupplier: async (input) => {
+        await api.createSupplier(input);
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+      },
+      updateSupplier: async (supplierId, patch) => {
+        await api.updateSupplier(supplierId, patch);
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+      },
+      addPurchaseOrder: async (input) => {
+        await api.createPurchaseOrder(input);
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+      },
+      updatePurchaseOrderStatus: async (orderId, status) => {
+        await api.updatePurchaseOrderStatus(orderId, { status });
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+      },
+      addPurchaseInvoice: async (input) => {
+        await api.createPurchaseInvoice(input);
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+        await queryClient.invalidateQueries({ queryKey: ["products"] });
+      },
+      addSupplierPayment: async (input) => {
+        await api.createSupplierPayment(input);
+        await queryClient.invalidateQueries({ queryKey: ["creditors"] });
+      },
+      addBankDeposit: async (input) => {
+        await api.createBankDeposit(input);
+        await queryClient.invalidateQueries({ queryKey: ["bankDeposits"] });
+      },
+      updateBankDepositStatus: async (depositId, status) => {
+        await api.updateBankDepositStatus(depositId, { status });
+        await queryClient.invalidateQueries({ queryKey: ["bankDeposits"] });
+      },
     };
   }, [queryClient]);
 
@@ -218,12 +393,22 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       users: usersQuery.data ?? [],
       sales: salesQuery.data ?? [],
       debtors: debtorsQuery.data ?? [],
+      employees: payrollQuery.data?.employees ?? [],
+      payrollRuns: payrollQuery.data?.runs ?? [],
+      suppliers: creditorsQuery.data?.suppliers ?? [],
+      purchaseOrders: creditorsQuery.data?.purchaseOrders ?? [],
+      purchaseInvoices: creditorsQuery.data?.purchaseInvoices ?? [],
+      supplierPayments: creditorsQuery.data?.supplierPayments ?? [],
+      bankDeposits: bankDepositsQuery.data ?? [],
       actions,
     }),
     [
       actions,
       authStatus,
       debtorsQuery.data,
+      payrollQuery.data,
+      creditorsQuery.data,
+      bankDepositsQuery.data,
       productsQuery.data,
       salesQuery.data,
       session,

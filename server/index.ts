@@ -9,6 +9,9 @@ import { usersRouter } from "./routes/users.js";
 import { salesRouter } from "./routes/sales.js";
 import { shopRouter } from "./routes/shop.js";
 import { debtorsRouter } from "./routes/debtors.js";
+import { payrollRouter } from "./routes/payroll.js";
+import { creditorsRouter } from "./routes/creditors.js";
+import { bankingRouter } from "./routes/banking.js";
 import {
   apiRateLimit,
   rejectCrossOriginWrites,
@@ -45,6 +48,9 @@ export async function createServer() {
   app.use("/api/users", usersRouter);
   app.use("/api/sales", salesRouter);
   app.use("/api/debtors", debtorsRouter);
+  app.use("/api/payroll", payrollRouter);
+  app.use("/api/creditors", creditorsRouter);
+  app.use("/api/banking", bankingRouter);
 
   return app;
 }

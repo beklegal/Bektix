@@ -1,4 +1,19 @@
-import type { Debtor, Product, Sale, Shop, User } from "./bektix";
+import type {
+  BankDeposit,
+  Debtor,
+  Employee,
+  PayrollRun,
+  Product,
+  PurchaseInvoice,
+  PurchaseLineItem,
+  PurchaseOrder,
+  Sale,
+  Shop,
+  SimplePaymentMethod,
+  Supplier,
+  SupplierPayment,
+  User,
+} from "./bektix";
 
 export type ApiErrorCode =
   | "bad_request"
@@ -67,3 +82,89 @@ export interface CreateDebtorRequest
 export type UpdateDebtorRequest = Partial<
   Pick<Debtor, "name" | "date" | "invoiceNumber" | "amount" | "status">
 >;
+
+export interface CreateEmployeeRequest
+  extends Pick<Employee, "name" | "title" | "payType" | "basePay"> {}
+
+export type UpdateEmployeeRequest = Partial<
+  Pick<Employee, "name" | "title" | "payType" | "basePay" | "status">
+>;
+
+export interface CreatePayrollRunRequest
+  extends Pick<
+    PayrollRun,
+    | "employeeId"
+    | "periodStart"
+    | "periodEnd"
+    | "payDate"
+    | "grossPay"
+    | "allowances"
+    | "deductions"
+    | "paymentMethod"
+  > {}
+
+export type UpdatePayrollRunRequest = Partial<
+  Pick<
+    PayrollRun,
+    | "periodStart"
+    | "periodEnd"
+    | "payDate"
+    | "grossPay"
+    | "allowances"
+    | "deductions"
+    | "paymentMethod"
+    | "status"
+  >
+>;
+
+export interface PayrollPayload {
+  employees: Employee[];
+  runs: PayrollRun[];
+}
+
+export interface CreateSupplierRequest
+  extends Pick<Supplier, "name" | "contactName" | "phone" | "email"> {}
+
+export type UpdateSupplierRequest = Partial<
+  Pick<Supplier, "name" | "contactName" | "phone" | "email" | "status">
+>;
+
+export interface CreatePurchaseOrderRequest {
+  supplierId: string;
+  orderDate: string;
+  expectedDate?: string;
+  items: PurchaseLineItem[];
+}
+
+export type UpdatePurchaseOrderStatusRequest = Pick<PurchaseOrder, "status">;
+
+export interface CreatePurchaseInvoiceRequest {
+  supplierId: string;
+  purchaseOrderId?: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate?: string;
+  items: PurchaseLineItem[];
+}
+
+export interface CreateSupplierPaymentRequest {
+  purchaseInvoiceId: string;
+  paymentDate: string;
+  amount: number;
+  paymentMethod: SimplePaymentMethod;
+  reference?: string;
+}
+
+export interface CreditorsPayload {
+  suppliers: Supplier[];
+  purchaseOrders: PurchaseOrder[];
+  purchaseInvoices: PurchaseInvoice[];
+  supplierPayments: SupplierPayment[];
+}
+
+export interface CreateBankDepositRequest
+  extends Pick<BankDeposit, "depositDate" | "bankName" | "reference" | "status"> {
+  lines: Array<Omit<BankDeposit["lines"][number], "id">>;
+}
+
+export type UpdateBankDepositStatusRequest = Pick<BankDeposit, "status">;
