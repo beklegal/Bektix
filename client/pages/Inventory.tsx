@@ -71,6 +71,11 @@ function productToDraft(product: Product): ProductDraft {
   };
 }
 
+function productVariantText(product: Product) {
+  const details = [product.size && `Size: ${product.size}`, product.color && `Color: ${product.color}`].filter(Boolean);
+  return details.join(" • ");
+}
+
 export default function Inventory() {
   const { shop, products, actions } = useBektix();
   const currency = shop?.preferences.currency || "GH₵";
@@ -101,7 +106,9 @@ export default function Inventory() {
     return products.filter(
       (p) =>
         p.name.toLowerCase().includes(normalizedSearch) ||
-        p.category.toLowerCase().includes(normalizedSearch),
+        p.category.toLowerCase().includes(normalizedSearch) ||
+        (p.size ?? "").toLowerCase().includes(normalizedSearch) ||
+        (p.color ?? "").toLowerCase().includes(normalizedSearch),
     );
   }, [normalizedSearch, products]);
 
@@ -259,12 +266,14 @@ export default function Inventory() {
       <div className="mt-6 grid gap-3 md:hidden">
         {sorted.map((product) => {
           const status = statusForProduct(product, lowStockThreshold);
+          const variantText = productVariantText(product);
           return (
             <Card key={product.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{product.name}</p>
                   <p className="text-sm text-muted-foreground">{product.category}</p>
+                  {variantText && <p className="mt-1 text-sm text-muted-foreground">{variantText}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="icon" onClick={() => openEdit(product)} className="h-10 w-10">
@@ -328,6 +337,7 @@ export default function Inventory() {
             <TableRow>
               <TableHead>Product</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Size / Color</TableHead>
               <TableHead className="text-right">Qty</TableHead>
               <TableHead className="text-right">Cost</TableHead>
               <TableHead className="text-right">Price</TableHead>
@@ -338,10 +348,12 @@ export default function Inventory() {
           <TableBody>
             {sorted.map((product) => {
               const status = statusForProduct(product, lowStockThreshold);
+              const variantText = productVariantText(product);
               return (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell className="text-muted-foreground">{product.category}</TableCell>
+                  <TableCell className="text-muted-foreground">{variantText || "—"}</TableCell>
                   <TableCell className="text-right font-semibold">{product.quantity}</TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     {formatMoney(product.costPrice, currency)}
@@ -379,7 +391,7 @@ export default function Inventory() {
 
             {sorted.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7}>
+                <TableCell colSpan={8}>
                   <div className="p-8 text-center">
                     <Package className="mx-auto h-10 w-10 text-muted-foreground" />
                     <p className="mt-3 text-sm text-muted-foreground">No products found.</p>
