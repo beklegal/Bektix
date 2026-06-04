@@ -89,7 +89,7 @@ export default function Receipt() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="bektix-receipt-page min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl">
         <div className="bektix-print-hidden mb-6 flex flex-wrap items-center justify-between gap-3">
           <Button variant="outline" onClick={() => navigate("/sales")} className="h-11">

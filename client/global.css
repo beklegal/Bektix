@@ -142,8 +142,8 @@
 
 @media print {
   @page {
-    size: 80mm auto;
-    margin: 0;
+    size: A4 landscape;
+    margin: 8mm;
   }
 
   html,
@@ -162,12 +162,62 @@
     display: none !important;
   }
 
+  .bektix-receipt-page {
+    min-height: auto !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .bektix-receipt-page > div {
+    max-width: none !important;
+  }
+
+  .bektix-receipt-page .flex.justify-center {
+    display: block !important;
+  }
+
   .bektix-receipt {
-    width: 80mm !important;
-    max-width: 80mm !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: calc(210mm - 16mm) !important;
+    padding: 8mm !important;
     border: none !important;
     box-shadow: none !important;
     margin: 0 !important;
     border-radius: 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.35 !important;
+    overflow: visible !important;
+  }
+
+  .bektix-receipt :where(p, span, div) {
+    overflow-wrap: break-word !important;
+    word-break: normal !important;
+  }
+
+  .bektix-receipt .text-xs {
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+  }
+
+  .bektix-receipt .text-\[10px\] {
+    font-size: 9pt !important;
+    line-height: 1.3 !important;
+  }
+
+  .bektix-receipt .text-sm {
+    font-size: 11pt !important;
+    line-height: 1.35 !important;
+  }
+
+  .bektix-receipt .text-base {
+    font-size: 13pt !important;
+    line-height: 1.35 !important;
+  }
+
+  .bektix-receipt .text-lg {
+    font-size: 16pt !important;
+    line-height: 1.25 !important;
   }
 }
