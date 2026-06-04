@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useBektix } from "@/lib/bektix/context";
 import { formatMoney } from "@/lib/bektix/format";
 import { api } from "@/lib/bektix/api";
@@ -21,6 +20,28 @@ function payerTypeLabel(type: string) {
   if (type === "government") return "Government";
   if (type === "walkIn") return "Walk-in";
   return type;
+}
+
+function BarcodeLikeStrip({ value }: { value: string }) {
+  const source = value || "0";
+  const bars = Array.from({ length: 74 }, (_, index) => {
+    const code = source.charCodeAt(index % source.length) + index * 17;
+    const width = code % 11 === 0 ? 5 : code % 5 === 0 ? 4 : code % 3 === 0 ? 3 : code % 2 === 0 ? 2 : 1;
+    const height = code % 7 === 0 ? 72 : code % 4 === 0 ? 86 : 100;
+    return { width, height };
+  });
+
+  return (
+    <div className="bektix-receipt-barcode" aria-label={`Receipt barcode ${value}`}>
+      {bars.map((bar, index) => (
+        <span
+          key={`${value}-${index}`}
+          className="bektix-receipt-bar"
+          style={{ width: `${bar.width}px`, height: `${bar.height}%` }}
+        />
+      ))}
+    </div>
+  );
 }
 
 export default function Receipt() {
@@ -88,6 +109,10 @@ export default function Receipt() {
     );
   }
 
+  const receiptDate = new Date(sale.createdAt).toLocaleString();
+  const cashierName = sale.cashierName || user?.email || "Cashier";
+  const shopName = shop?.name || "Jilkem Company Limited";
+
   return (
     <div className="bektix-receipt-page min-h-screen bg-background p-6">
       <div className="mx-auto max-w-[1180px]">
@@ -111,100 +136,126 @@ export default function Receipt() {
         </div>
 
         <div className="bektix-receipt-shell flex justify-center">
-          <Card className="bektix-receipt flex w-full flex-col p-8">
-            <div className="text-center space-y-2">
-              <img src="/Jilkem%20Logo.jpeg" alt="Jilkem Company Limited logo" className="mx-auto h-14 w-auto object-contain" />
-              <div>
-                <p className="text-2xl font-bold">{shop?.name || "Jilkem Company Limited"}</p>
-                <p className="text-sm text-muted-foreground">Shop Management System</p>
-              </div>
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="grid gap-4 text-sm md:grid-cols-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Receipt</span>
-                <span className="font-semibold">{sale.receiptNumber}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Date</span>
-                <span className="font-semibold">{new Date(sale.createdAt).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Cashier</span>
-                <span className="font-semibold">{sale.cashierName || user?.email || "Cashier"}</span>
-              </div>
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="bektix-receipt-items flex-1 text-sm">
-              <div className="flex justify-between border-b border-border pb-2 font-semibold">
-                <span className="w-[55%]">Item</span>
-                <span className="w-[15%] text-right">Qty</span>
-                <span className="w-[30%] text-right">Total</span>
-              </div>
-              <div className="mt-2 space-y-2">
-                {sale.items.map((item) => (
-                  <div key={item.productId} className="flex justify-between">
-                    <div className="w-[55%] pr-2">
-                      <p className="font-medium leading-4">{item.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{formatMoney(item.unitPrice, currency)} each</p>
-                    </div>
-                    <div className="w-[15%] text-right font-semibold">{item.quantity}</div>
-                    <div className="w-[30%] text-right font-semibold">
-                      {formatMoney(item.unitPrice * item.quantity, currency)}
-                    </div>
+          <article className="bektix-receipt">
+            <header className="bektix-receipt-header">
+              <section className="bektix-receipt-box bektix-receipt-details">
+                <h2>Sale Receipt</h2>
+                <dl>
+                  <div>
+                    <dt>Receipt Number</dt>
+                    <dd>{sale.receiptNumber}</dd>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div>
+                    <dt>Date</dt>
+                    <dd>{receiptDate}</dd>
+                  </div>
+                  <div>
+                    <dt>Cashier</dt>
+                    <dd>{cashierName}</dd>
+                  </div>
+                  <div>
+                    <dt>Payment Method</dt>
+                    <dd>{paymentMethodLabel(sale.paymentMethod)}</dd>
+                  </div>
+                  <div>
+                    <dt>Payer Type</dt>
+                    <dd>{payerTypeLabel(sale.payerType)}</dd>
+                  </div>
+                </dl>
+              </section>
 
-            <Separator className="my-4" />
+              <section className="bektix-receipt-box bektix-receipt-brand">
+                <img src="/Jilkem%20Logo.jpeg" alt="Jilkem Company Limited logo" />
+                <div>
+                  <h1>{shopName}</h1>
+                  <p>Shop Management System</p>
+                </div>
+              </section>
 
-            <div className="bektix-receipt-summary grid gap-6 text-sm md:grid-cols-2">
-              <div className="space-y-1">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span className="font-semibold text-foreground">{formatMoney(sale.subtotal, currency)}</span>
-                </div>
-                <div className="flex justify-between pt-2 text-xl font-bold">
-                  <span>Total</span>
-                  <span>{formatMoney(sale.total, currency)}</span>
-                </div>
-              </div>
+              <section className="bektix-receipt-box bektix-receipt-tracking">
+                <p className="bektix-receipt-label">Tracking / Receipt Number</p>
+                <strong>{sale.receiptNumber}</strong>
+                <BarcodeLikeStrip value={sale.receiptNumber} />
+                <p className="bektix-receipt-note">Generated receipt reference</p>
+              </section>
+            </header>
 
-              <div className="space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Paid</span>
-                  <span className="font-semibold">{formatMoney(sale.amountPaid, currency)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Change</span>
-                  <span className="font-semibold">{formatMoney(sale.change, currency)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Method</span>
-                  <span className="font-semibold">{paymentMethodLabel(sale.paymentMethod)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Payer</span>
-                  <span className="font-semibold">{payerTypeLabel(sale.payerType)}</span>
-                </div>
-              </div>
-            </div>
+            <main className="bektix-receipt-body">
+              <section className="bektix-receipt-box bektix-receipt-items">
+                <h2>Item Information</h2>
+                <table className="bektix-receipt-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Unit Price</th>
+                      <th>Qty</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sale.items.map((item) => (
+                      <tr key={item.productId}>
+                        <td>{item.name}</td>
+                        <td>{formatMoney(item.unitPrice, currency)}</td>
+                        <td>{item.quantity}</td>
+                        <td>{formatMoney(item.unitPrice * item.quantity, currency)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
 
-            <Separator className="my-4" />
+              <aside className="bektix-receipt-side">
+                <section className="bektix-receipt-box bektix-receipt-summary">
+                  <h2>Payment Summary</h2>
+                  <dl>
+                    <div>
+                      <dt>Subtotal</dt>
+                      <dd>{formatMoney(sale.subtotal, currency)}</dd>
+                    </div>
+                    <div>
+                      <dt>Total</dt>
+                      <dd>{formatMoney(sale.total, currency)}</dd>
+                    </div>
+                    <div>
+                      <dt>Paid</dt>
+                      <dd>{formatMoney(sale.amountPaid, currency)}</dd>
+                    </div>
+                    <div>
+                      <dt>Change</dt>
+                      <dd>{formatMoney(sale.change, currency)}</dd>
+                    </div>
+                  </dl>
+                </section>
 
-            <p className="text-center text-xs text-muted-foreground">{footer}</p>
-            <p className="mt-1 text-center text-[10px] text-muted-foreground">
-              Powered by{" "}
-              <Link to="/dashboard" className="underline underline-offset-2">
-                Jilkem
-              </Link>
-            </p>
-          </Card>
+                <section className="bektix-receipt-box bektix-receipt-signature">
+                  <h2>Recipient Information</h2>
+                  <div>
+                    <span>Name:</span>
+                  </div>
+                  <div>
+                    <span>Telephone:</span>
+                  </div>
+                  <div>
+                    <span>Signature:</span>
+                  </div>
+                  <div>
+                    <span>Date:</span>
+                  </div>
+                </section>
+              </aside>
+            </main>
+
+            <footer className="bektix-receipt-footer">
+              <p>{footer}</p>
+              <span>
+                Powered by{" "}
+                <Link to="/dashboard" className="underline underline-offset-2">
+                  Jilkem
+                </Link>
+              </span>
+            </footer>
+          </article>
         </div>
       </div>
     </div>

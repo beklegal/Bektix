@@ -142,16 +142,232 @@
 
 .bektix-receipt-shell {
   width: 100%;
+  overflow-x: auto;
 }
 
 .bektix-receipt {
   aspect-ratio: 297 / 210;
+  background: white;
+  border: 2px solid #111;
+  box-shadow: 0 24px 70px rgb(15 23 42 / 0.16);
+  color: #111;
+  display: flex;
+  flex-direction: column;
   max-width: 100%;
   min-height: min(72vw, 835px);
+  padding: 24px;
+  width: 100%;
+}
+
+.bektix-receipt-header {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr 0.9fr;
+  gap: 10px;
+  min-height: 160px;
+}
+
+.bektix-receipt-box {
+  border: 2px solid #111;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.bektix-receipt-box h2 {
+  border-bottom: 1px solid #111;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.bektix-receipt-details dl,
+.bektix-receipt-summary dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.bektix-receipt-details dl div,
+.bektix-receipt-summary dl div {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.5fr) 1fr;
+  gap: 8px;
+}
+
+.bektix-receipt dt {
+  color: #222;
+  font-weight: 800;
+}
+
+.bektix-receipt dd {
+  font-weight: 700;
+  margin: 0;
+  min-width: 0;
+}
+
+.bektix-receipt-brand {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  text-align: center;
+}
+
+.bektix-receipt-brand img {
+  flex: 0 0 auto;
+  max-height: 74px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.bektix-receipt-brand h1 {
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.bektix-receipt-brand p,
+.bektix-receipt-note {
+  font-size: 11px;
+  font-weight: 700;
+  margin: 4px 0 0;
+}
+
+.bektix-receipt-tracking {
+  display: flex;
+  flex-direction: column;
+}
+
+.bektix-receipt-label {
+  font-size: 12px;
+  font-weight: 900;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.bektix-receipt-tracking strong {
+  font-size: 21px;
+  line-height: 1.1;
+}
+
+.bektix-receipt-barcode {
+  align-items: flex-end;
+  border-block: 1px solid #111;
+  display: flex;
+  gap: 2px;
+  height: 64px;
+  margin-top: auto;
+  overflow: hidden;
+  padding: 6px 4px;
+}
+
+.bektix-receipt-bar {
+  background: #111;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.bektix-receipt-body {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  margin-top: 10px;
+  min-height: 0;
 }
 
 .bektix-receipt-items {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+}
+
+.bektix-receipt-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.bektix-receipt-table th,
+.bektix-receipt-table td {
+  border: 1px solid #111;
+  font-size: 13px;
+  line-height: 1.25;
+  padding: 7px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.bektix-receipt-table th {
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.bektix-receipt-table th:nth-child(1),
+.bektix-receipt-table td:nth-child(1) {
+  width: 54%;
+}
+
+.bektix-receipt-table th:nth-child(2),
+.bektix-receipt-table td:nth-child(2),
+.bektix-receipt-table th:nth-child(4),
+.bektix-receipt-table td:nth-child(4) {
+  text-align: right;
+  width: 18%;
+}
+
+.bektix-receipt-table th:nth-child(3),
+.bektix-receipt-table td:nth-child(3) {
+  text-align: center;
+  width: 10%;
+}
+
+.bektix-receipt-side {
+  display: grid;
+  gap: 10px;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+
+.bektix-receipt-summary dl div {
+  border-bottom: 1px solid #111;
+  grid-template-columns: 1fr auto;
+  padding-bottom: 5px;
+}
+
+.bektix-receipt-summary dl div:nth-child(2) {
+  font-size: 20px;
+}
+
+.bektix-receipt-signature {
+  display: grid;
+  grid-template-rows: auto repeat(4, 1fr);
+  gap: 8px;
+}
+
+.bektix-receipt-signature div {
+  border-bottom: 1px solid #111;
+  font-weight: 800;
+  min-height: 28px;
+}
+
+.bektix-receipt-footer {
+  align-items: center;
+  border: 2px solid #111;
+  display: flex;
+  font-size: 11px;
+  font-weight: 800;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding: 7px 10px;
+}
+
+.bektix-receipt-footer p,
+.bektix-receipt-footer span {
+  margin: 0;
 }
 
 @media print {
@@ -165,6 +381,7 @@
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
+    width: 297mm !important;
   }
 
   body {
@@ -207,13 +424,13 @@
     height: 210mm !important;
     min-height: 210mm !important;
     padding: 8mm !important;
-    border: none !important;
+    border: 2px solid #111 !important;
     box-shadow: none !important;
     margin: 0 !important;
     border-radius: 0 !important;
-    font-size: 11pt !important;
-    line-height: 1.35 !important;
-    overflow: visible !important;
+    font-size: 10pt !important;
+    line-height: 1.25 !important;
+    overflow: hidden !important;
   }
 
   .bektix-receipt-items {
@@ -221,7 +438,30 @@
   }
 
   .bektix-receipt-summary {
-    margin-top: auto !important;
+    margin-top: 0 !important;
+  }
+
+  .bektix-receipt-box,
+  .bektix-receipt-footer {
+    border-color: #111 !important;
+  }
+
+  .bektix-receipt-header {
+    min-height: 42mm !important;
+  }
+
+  .bektix-receipt-brand h1 {
+    font-size: 28pt !important;
+  }
+
+  .bektix-receipt-table th,
+  .bektix-receipt-table td {
+    font-size: 9pt !important;
+    padding: 4px 6px !important;
+  }
+
+  .bektix-receipt-barcode {
+    height: 18mm !important;
   }
 
   .bektix-receipt :where(p, span, div) {
