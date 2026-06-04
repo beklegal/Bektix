@@ -90,7 +90,7 @@ export default function Receipt() {
 
   return (
     <div className="bektix-receipt-page min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-[1180px]">
         <div className="bektix-print-hidden mb-6 flex flex-wrap items-center justify-between gap-3">
           <Button variant="outline" onClick={() => navigate("/sales")} className="h-11">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -110,19 +110,19 @@ export default function Receipt() {
           </div>
         </div>
 
-        <div className="flex justify-center">
-          <Card className="bektix-receipt w-full max-w-md p-5">
+        <div className="bektix-receipt-shell flex justify-center">
+          <Card className="bektix-receipt flex w-full flex-col p-8">
             <div className="text-center space-y-2">
-              <img src="/Jilkem%20Logo.jpeg" alt="Jilkem Company Limited logo" className="mx-auto h-10 w-auto object-contain" />
+              <img src="/Jilkem%20Logo.jpeg" alt="Jilkem Company Limited logo" className="mx-auto h-14 w-auto object-contain" />
               <div>
-                <p className="text-lg font-bold">{shop?.name || "Jilkem Company Limited"}</p>
-                <p className="text-xs text-muted-foreground">Shop Management System</p>
+                <p className="text-2xl font-bold">{shop?.name || "Jilkem Company Limited"}</p>
+                <p className="text-sm text-muted-foreground">Shop Management System</p>
               </div>
             </div>
 
             <Separator className="my-4" />
 
-            <div className="space-y-1 text-xs">
+            <div className="grid gap-4 text-sm md:grid-cols-3">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Receipt</span>
                 <span className="font-semibold">{sale.receiptNumber}</span>
@@ -139,7 +139,7 @@ export default function Receipt() {
 
             <Separator className="my-4" />
 
-            <div className="text-xs">
+            <div className="bektix-receipt-items flex-1 text-sm">
               <div className="flex justify-between border-b border-border pb-2 font-semibold">
                 <span className="w-[55%]">Item</span>
                 <span className="w-[15%] text-right">Qty</span>
@@ -163,35 +163,35 @@ export default function Receipt() {
 
             <Separator className="my-4" />
 
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span>
-                <span className="font-semibold text-foreground">{formatMoney(sale.subtotal, currency)}</span>
+            <div className="bektix-receipt-summary grid gap-6 text-sm md:grid-cols-2">
+              <div className="space-y-1">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-foreground">{formatMoney(sale.subtotal, currency)}</span>
+                </div>
+                <div className="flex justify-between pt-2 text-xl font-bold">
+                  <span>Total</span>
+                  <span>{formatMoney(sale.total, currency)}</span>
+                </div>
               </div>
-              <div className="flex justify-between pt-2 text-base font-bold">
-                <span>Total</span>
-                <span>{formatMoney(sale.total, currency)}</span>
-              </div>
-            </div>
 
-            <Separator className="my-4" />
-
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Paid</span>
-                <span className="font-semibold">{formatMoney(sale.amountPaid, currency)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Change</span>
-                <span className="font-semibold">{formatMoney(sale.change, currency)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Method</span>
-                <span className="font-semibold">{paymentMethodLabel(sale.paymentMethod)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Payer</span>
-                <span className="font-semibold">{payerTypeLabel(sale.payerType)}</span>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Paid</span>
+                  <span className="font-semibold">{formatMoney(sale.amountPaid, currency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Change</span>
+                  <span className="font-semibold">{formatMoney(sale.change, currency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Method</span>
+                  <span className="font-semibold">{paymentMethodLabel(sale.paymentMethod)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Payer</span>
+                  <span className="font-semibold">{payerTypeLabel(sale.payerType)}</span>
+                </div>
               </div>
             </div>
 

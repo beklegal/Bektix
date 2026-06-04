@@ -140,10 +140,24 @@
   }
 }
 
+.bektix-receipt-shell {
+  width: 100%;
+}
+
+.bektix-receipt {
+  aspect-ratio: 297 / 210;
+  max-width: 100%;
+  min-height: min(72vw, 835px);
+}
+
+.bektix-receipt-items {
+  min-height: 0;
+}
+
 @media print {
   @page {
     size: A4 landscape;
-    margin: 8mm;
+    margin: 0;
   }
 
   html,
@@ -163,6 +177,7 @@
   }
 
   .bektix-receipt-page {
+    box-sizing: border-box !important;
     min-height: auto !important;
     padding: 0 !important;
     background: white !important;
@@ -176,11 +191,21 @@
     display: block !important;
   }
 
+  .bektix-receipt-shell {
+    display: block !important;
+    width: 297mm !important;
+    height: 210mm !important;
+  }
+
   .bektix-receipt {
+    aspect-ratio: auto !important;
     box-sizing: border-box !important;
-    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 297mm !important;
     max-width: none !important;
-    min-height: calc(210mm - 16mm) !important;
+    height: 210mm !important;
+    min-height: 210mm !important;
     padding: 8mm !important;
     border: none !important;
     box-shadow: none !important;
@@ -189,6 +214,14 @@
     font-size: 11pt !important;
     line-height: 1.35 !important;
     overflow: visible !important;
+  }
+
+  .bektix-receipt-items {
+    flex: 1 1 auto !important;
+  }
+
+  .bektix-receipt-summary {
+    margin-top: auto !important;
   }
 
   .bektix-receipt :where(p, span, div) {
