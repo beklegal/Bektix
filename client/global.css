@@ -393,6 +393,40 @@
     display: none !important;
   }
 
+  body.bektix-stock-print-mode {
+    width: auto !important;
+  }
+
+  body.bektix-stock-print-mode * {
+    visibility: hidden !important;
+  }
+
+  body.bektix-stock-print-mode .bektix-stock-report,
+  body.bektix-stock-print-mode .bektix-stock-report * {
+    visibility: visible !important;
+  }
+
+  body.bektix-stock-print-mode .bektix-stock-report {
+    border: 0 !important;
+    box-shadow: none !important;
+    left: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    position: absolute !important;
+    top: 0 !important;
+    width: 100% !important;
+  }
+
+  body.bektix-stock-print-mode .bektix-stock-report table {
+    width: 100% !important;
+  }
+
+  body.bektix-stock-print-mode .bektix-stock-report th,
+  body.bektix-stock-print-mode .bektix-stock-report td {
+    font-size: 9pt !important;
+    padding: 5px 7px !important;
+  }
+
   .bektix-receipt-page {
     box-sizing: border-box !important;
     min-height: auto !important;

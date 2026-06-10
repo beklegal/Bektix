@@ -23,7 +23,7 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import { useBektix } from "@/lib/bektix/context";
 import { formatMoney } from "@/lib/bektix/format";
-import { ClipboardList, Plus, Search, Truck } from "lucide-react";
+import { ClipboardList, Plus, Search, Trash2, Truck } from "lucide-react";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -36,14 +36,12 @@ type SupplierDraft = {
 
 type PurchaseDraft = {
   supplierId: string;
-  productId: string;
-  quantity: string;
-  unitCost: string;
   date: string;
   expectedDate: string;
   dueDate: string;
   invoiceNumber: string;
   purchaseOrderId: string;
+  lines: PurchaseLineDraft[];
 };
 
 type PaymentDraft = {
@@ -54,18 +52,34 @@ type PaymentDraft = {
   reference: string;
 };
 
-const emptySupplier: SupplierDraft = { name: "", contactName: "", phone: "", email: "" };
-const emptyPurchase: PurchaseDraft = {
-  supplierId: "",
-  productId: "",
-  quantity: "1",
-  unitCost: "0",
-  date: today,
-  expectedDate: "",
-  dueDate: "",
-  invoiceNumber: "",
-  purchaseOrderId: "",
+type PurchaseLineDraft = {
+  id: string;
+  productId: string;
+  quantity: string;
+  unitCost: string;
 };
+
+function newPurchaseLine(): PurchaseLineDraft {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    productId: "",
+    quantity: "1",
+    unitCost: "0",
+  };
+}
+
+const emptySupplier: SupplierDraft = { name: "", contactName: "", phone: "", email: "" };
+function emptyPurchase(): PurchaseDraft {
+  return {
+    supplierId: "",
+    date: today,
+    expectedDate: "",
+    dueDate: "",
+    invoiceNumber: "",
+    purchaseOrderId: "",
+    lines: [newPurchaseLine()],
+  };
+}
 const emptyPayment: PaymentDraft = {
   purchaseInvoiceId: "",
   paymentDate: today,
@@ -97,7 +111,7 @@ export default function Creditors() {
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [supplierDraft, setSupplierDraft] = useState<SupplierDraft>(emptySupplier);
-  const [purchaseDraft, setPurchaseDraft] = useState<PurchaseDraft>(emptyPurchase);
+  const [purchaseDraft, setPurchaseDraft] = useState<PurchaseDraft>(() => emptyPurchase());
   const [paymentDraft, setPaymentDraft] = useState<PaymentDraft>(emptyPayment);
 
   const filteredInvoices = useMemo(() => {
@@ -117,14 +131,48 @@ export default function Creditors() {
     return { unpaid, paid, ordered };
   }, [purchaseInvoices, purchaseOrders, supplierPayments]);
 
-  const buildLine = (): PurchaseLineItem | null => {
-    const product = products.find((item) => item.id === purchaseDraft.productId);
-    const quantity = Number.parseInt(purchaseDraft.quantity, 10);
-    const unitCost = Number.parseFloat(purchaseDraft.unitCost);
-    if (!product || !Number.isFinite(quantity) || quantity < 1 || !Number.isFinite(unitCost) || unitCost < 0) {
-      return null;
-    }
-    return { productId: product.id, productName: product.name, quantity, unitCost };
+  const buildLines = (): PurchaseLineItem[] | null => {
+    const lines = purchaseDraft.lines.map((line) => {
+      const product = products.find((item) => item.id === line.productId);
+      const quantity = Number.parseInt(line.quantity, 10);
+      const unitCost = Number.parseFloat(line.unitCost);
+      if (!product || !Number.isFinite(quantity) || quantity < 1 || !Number.isFinite(unitCost) || unitCost < 0) {
+        return null;
+      }
+      return { productId: product.id, productName: product.name, quantity, unitCost };
+    });
+
+    if (lines.length === 0 || lines.some((line) => line === null)) return null;
+    return lines as PurchaseLineItem[];
+  };
+
+  const purchaseDraftTotal = useMemo(() => {
+    return purchaseDraft.lines.reduce((sum, line) => {
+      const quantity = Number.parseInt(line.quantity, 10);
+      const unitCost = Number.parseFloat(line.unitCost);
+      if (!Number.isFinite(quantity) || !Number.isFinite(unitCost)) return sum;
+      return sum + quantity * unitCost;
+    }, 0);
+  }, [purchaseDraft.lines]);
+
+  const updatePurchaseLine = (lineId: string, patch: Partial<PurchaseLineDraft>) => {
+    setPurchaseDraft((current) => ({
+      ...current,
+      lines: current.lines.map((line) => (line.id === lineId ? { ...line, ...patch } : line)),
+    }));
+  };
+
+  const addPurchaseLine = () => {
+    setPurchaseDraft((current) => ({ ...current, lines: [...current.lines, newPurchaseLine()] }));
+  };
+
+  const removePurchaseLine = (lineId: string) => {
+    setPurchaseDraft((current) => {
+      if (current.lines.length <= 1) {
+        return { ...current, lines: [newPurchaseLine()] };
+      }
+      return { ...current, lines: current.lines.filter((line) => line.id !== lineId) };
+    });
   };
 
   const saveSupplier = async () => {
@@ -148,8 +196,8 @@ export default function Creditors() {
   };
 
   const savePurchaseOrder = async () => {
-    const line = buildLine();
-    if (!purchaseDraft.supplierId || !line) {
+    const lines = buildLines();
+    if (!purchaseDraft.supplierId || !purchaseDraft.date || !lines) {
       toast({ title: "Complete purchase order details", variant: "destructive" });
       return;
     }
@@ -158,9 +206,9 @@ export default function Creditors() {
         supplierId: purchaseDraft.supplierId,
         orderDate: purchaseDraft.date,
         expectedDate: purchaseDraft.expectedDate || undefined,
-        items: [line],
+        items: lines,
       });
-      setPurchaseDraft(emptyPurchase);
+      setPurchaseDraft(emptyPurchase());
       setPoOpen(false);
       toast({ title: "Purchase order created" });
     } catch (err) {
@@ -169,8 +217,8 @@ export default function Creditors() {
   };
 
   const saveInvoice = async () => {
-    const line = buildLine();
-    if (!purchaseDraft.supplierId || !purchaseDraft.invoiceNumber.trim() || !line) {
+    const lines = buildLines();
+    if (!purchaseDraft.supplierId || !purchaseDraft.invoiceNumber.trim() || !purchaseDraft.date || !lines) {
       toast({ title: "Complete invoice details", variant: "destructive" });
       return;
     }
@@ -181,9 +229,9 @@ export default function Creditors() {
         invoiceNumber: purchaseDraft.invoiceNumber.trim(),
         invoiceDate: purchaseDraft.date,
         dueDate: purchaseDraft.dueDate || undefined,
-        items: [line],
+        items: lines,
       });
-      setPurchaseDraft(emptyPurchase);
+      setPurchaseDraft(emptyPurchase());
       setInvoiceOpen(false);
       toast({ title: "Invoice posted and stock updated" });
     } catch (err) {

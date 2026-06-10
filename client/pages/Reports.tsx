@@ -1,25 +1,80 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { PaymentMethod, Product, Sale } from "@shared/bektix";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useBektix } from "@/lib/bektix/context";
 import { formatCompact, formatMoney } from "@/lib/bektix/format";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { format, isSameMonth, startOfMonth, subDays, subMonths } from "date-fns";
-import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  DollarSign,
+  Package,
+  Printer,
+  Search,
+  ShoppingCart,
+  TrendingUp,
+} from "lucide-react";
 
 function saleProfit(sale: { items: Array<{ unitPrice: number; unitCost: number; quantity: number }> }) {
   return sale.items.reduce((sum, li) => sum + (li.unitPrice - li.unitCost) * li.quantity, 0);
 }
 
+function paymentMethodLabel(method: PaymentMethod | "all") {
+  if (method === "all") return "All payment methods";
+  if (method === "cash") return "Cash";
+  if (method === "mobileMoney") return "Mobile Money";
+  if (method === "cheque") return "Cheque";
+  return method;
+}
+
+function stockStatus(product: Product, lowStockThreshold: number) {
+  if (product.quantity <= 0) return "out";
+  if (product.quantity <= lowStockThreshold) return "low";
+  return "in";
+}
+
+function StockBadge({ product, lowStockThreshold }: { product: Product; lowStockThreshold: number }) {
+  const status = stockStatus(product, lowStockThreshold);
+  if (status === "out") {
+    return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Out</Badge>;
+  }
+  if (status === "low") {
+    return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">Low</Badge>;
+  }
+  return <Badge variant="secondary">In stock</Badge>;
+}
+
 export default function Reports() {
-  const { shop, sales } = useBektix();
-  const currency = shop?.preferences.currency || "GH₵";
+  const navigate = useNavigate();
+  const { shop, user, sales, products } = useBektix();
+  const currency = shop?.preferences.currency || "GHâ‚µ";
+  const lowStockThreshold = shop?.preferences.lowStockThreshold ?? 10;
+  const isAdmin = user?.role === "admin";
+
+  const [saleSearch, setSaleSearch] = useState("");
+  const [saleDateFrom, setSaleDateFrom] = useState("");
+  const [saleDateTo, setSaleDateTo] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentMethod | "all">("all");
+  const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
 
   const thisMonthSales = useMemo(() => {
     const now = new Date();
@@ -83,10 +138,52 @@ export default function Reports() {
       .slice(0, 7);
   }, [thisMonthSales]);
 
+  const filteredSales = useMemo(() => {
+    const search = saleSearch.trim().toLowerCase();
+    return sales.filter((sale) => {
+      const saleDate = sale.createdAt.slice(0, 10);
+      if (saleDateFrom && saleDate < saleDateFrom) return false;
+      if (saleDateTo && saleDate > saleDateTo) return false;
+      if (paymentFilter !== "all" && sale.paymentMethod !== paymentFilter) return false;
+      if (!search) return true;
+      return (
+        sale.receiptNumber.toLowerCase().includes(search) ||
+        sale.cashierName.toLowerCase().includes(search) ||
+        sale.items.some((item) => item.name.toLowerCase().includes(search))
+      );
+    });
+  }, [paymentFilter, saleDateFrom, saleDateTo, saleSearch, sales]);
+
+  const stockStats = useMemo(() => {
+    const units = products.reduce((sum, product) => sum + product.quantity, 0);
+    const low = products.filter((product) => stockStatus(product, lowStockThreshold) === "low").length;
+    const out = products.filter((product) => stockStatus(product, lowStockThreshold) === "out").length;
+    return { total: products.length, units, low, out };
+  }, [lowStockThreshold, products]);
+
+  const sortedProducts = useMemo(() => {
+    return [...products].sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
+
+  const printStockReport = () => {
+    document.body.classList.add("bektix-stock-print-mode");
+    const cleanup = () => {
+      document.body.classList.remove("bektix-stock-print-mode");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+    window.setTimeout(cleanup, 500);
+  };
+
+  const printReceipt = (sale: Sale) => {
+    navigate(`/receipt/${sale.id}?autoprint=1`);
+  };
+
   return (
     <AppShell
       title="Reports"
-      description="Analytics for sales, profit, and best-selling products."
+      description="Analytics for sales, profit, stock, and best-selling products."
       active="reports"
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -183,6 +280,214 @@ export default function Reports() {
           </div>
         </Card>
       </div>
+
+      {isAdmin && (
+        <>
+          <Card className="bektix-stock-report mt-6 overflow-hidden">
+            <div className="bektix-stock-print-header flex flex-col gap-4 p-6 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-lg font-semibold">Available stock</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Printable stock report for {shop?.name || "this shop"}.
+                </p>
+              </div>
+              <Button variant="outline" onClick={printStockReport} className="bektix-print-hidden h-11">
+                <Printer className="mr-2 h-4 w-4" />
+                Print Stock
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 px-6 pb-6 lg:grid-cols-4">
+              <div className="rounded-md border border-border p-4">
+                <p className="text-sm text-muted-foreground">Products</p>
+                <p className="mt-1 text-xl font-semibold">{stockStats.total}</p>
+              </div>
+              <div className="rounded-md border border-border p-4">
+                <p className="text-sm text-muted-foreground">Stock units</p>
+                <p className="mt-1 text-xl font-semibold">{stockStats.units}</p>
+              </div>
+              <div className="rounded-md border border-border p-4">
+                <p className="text-sm text-muted-foreground">Low stock</p>
+                <p className="mt-1 text-xl font-semibold">{stockStats.low}</p>
+              </div>
+              <div className="rounded-md border border-border p-4">
+                <p className="text-sm text-muted-foreground">Out of stock</p>
+                <p className="mt-1 text-xl font-semibold">{stockStats.out}</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted">
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Cost</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{product.category}</TableCell>
+                      <TableCell className="text-right font-semibold">{product.quantity}</TableCell>
+                      <TableCell className="text-right">{formatMoney(product.costPrice, currency)}</TableCell>
+                      <TableCell className="text-right">{formatMoney(product.sellingPrice, currency)}</TableCell>
+                      <TableCell>
+                        <StockBadge product={product} lowStockThreshold={lowStockThreshold} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {sortedProducts.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                        No products available.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+
+          <Card className="mt-6 overflow-hidden">
+            <div className="p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-lg font-semibold">Previous sales and sold items</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Review older receipts, inspect sold items, and reprint receipts.
+                  </p>
+                </div>
+                <Badge variant="secondary">{filteredSales.length} receipts</Badge>
+              </div>
+
+              <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_160px_190px]">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    value={saleSearch}
+                    onChange={(e) => setSaleSearch(e.target.value)}
+                    placeholder="Search receipt, cashier, or item..."
+                    className="h-11 pl-10"
+                  />
+                </div>
+                <Input
+                  type="date"
+                  value={saleDateFrom}
+                  onChange={(e) => setSaleDateFrom(e.target.value)}
+                  className="h-11"
+                />
+                <Input
+                  type="date"
+                  value={saleDateTo}
+                  onChange={(e) => setSaleDateTo(e.target.value)}
+                  className="h-11"
+                />
+                <select
+                  value={paymentFilter}
+                  onChange={(e) => setPaymentFilter(e.target.value as PaymentMethod | "all")}
+                  className="h-11 rounded-md border border-border bg-background px-3 text-sm"
+                >
+                  <option value="all">{paymentMethodLabel("all")}</option>
+                  <option value="cash">Cash</option>
+                  <option value="mobileMoney">Mobile Money</option>
+                  <option value="cheque">Cheque</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted">
+                  <TableRow>
+                    <TableHead>Receipt</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Cashier</TableHead>
+                    <TableHead className="text-right">Items</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSales.map((sale) => {
+                    const expanded = expandedSaleId === sale.id;
+                    const itemCount = sale.items.reduce((sum, item) => sum + item.quantity, 0);
+                    return (
+                      <>
+                        <TableRow key={sale.id}>
+                          <TableCell>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedSaleId(expanded ? null : sale.id)}
+                              className="flex items-center gap-2 font-medium text-foreground"
+                            >
+                              {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              {sale.receiptNumber}
+                            </button>
+                          </TableCell>
+                          <TableCell>{new Date(sale.createdAt).toLocaleString()}</TableCell>
+                          <TableCell>{sale.cashierName}</TableCell>
+                          <TableCell className="text-right font-semibold">{itemCount}</TableCell>
+                          <TableCell>{paymentMethodLabel(sale.paymentMethod)}</TableCell>
+                          <TableCell className="text-right font-semibold">{formatMoney(sale.total, currency)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm" onClick={() => printReceipt(sale)}>
+                              <Printer className="mr-2 h-4 w-4" />
+                              Print
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                        {expanded && (
+                          <TableRow key={`${sale.id}-items`}>
+                            <TableCell colSpan={7} className="bg-muted/40 p-0">
+                              <div className="p-4">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Sold item</TableHead>
+                                      <TableHead className="text-right">Qty</TableHead>
+                                      <TableHead className="text-right">Unit price</TableHead>
+                                      <TableHead className="text-right">Line total</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {sale.items.map((item, index) => (
+                                      <TableRow key={`${sale.id}-${item.productId}-${index}`}>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell className="text-right">{item.quantity}</TableCell>
+                                        <TableCell className="text-right">{formatMoney(item.unitPrice, currency)}</TableCell>
+                                        <TableCell className="text-right font-semibold">
+                                          {formatMoney(item.unitPrice * item.quantity, currency)}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    );
+                  })}
+                  {filteredSales.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                        No sales match these filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </>
+      )}
 
       <Card className="mt-6 overflow-hidden">
         <div className="p-6">
