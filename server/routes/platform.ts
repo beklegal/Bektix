@@ -7,6 +7,7 @@ import { hashPassword } from "../auth/password.js";
 import { defaultShopPreferences } from "../domain/preferences.js";
 import {
   defaultFeatureAccess,
+  serializeBranch,
   normalizeFeatureAccess,
   serializeShop,
   serializeUser,
@@ -41,6 +42,11 @@ const createTenantSchema = z.object({
   features: featuresSchema.default({}),
 });
 
+const createBranchSchema = z.object({
+  name: z.string().min(1),
+  location: z.string().optional(),
+});
+
 platformRouter.get("/tenants", async (_req, res) => {
   const result = await pool.query(
     `
@@ -53,6 +59,24 @@ platformRouter.get("/tenants", async (_req, res) => {
         s.features,
         s.preferences,
         COUNT(u.id)::int AS user_count,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', b.id,
+                'shop_id', b.shop_id,
+                'name', b.name,
+                'location', b.location,
+                'status', b.status,
+                'created_at', b.created_at
+              )
+              ORDER BY b.created_at DESC
+            )
+            FROM branches b
+            WHERE b.shop_id = s.id
+          ),
+          '[]'::json
+        ) AS branches,
         (
           SELECT json_build_object(
             'id', au.id,
@@ -81,6 +105,8 @@ platformRouter.get("/tenants", async (_req, res) => {
       shop: serializeShop(row),
       admin: row.admin ? serializeUser(row.admin) : null,
       userCount: Number(row.user_count),
+      branches: (row.branches ?? []).map(serializeBranch),
+      branchCount: Number(row.branches?.length ?? 0),
     })),
   );
 });
@@ -151,6 +177,33 @@ platformRouter.patch("/tenants/:shopId/status", async (req, res) => {
   );
   if (!result.rowCount) return sendApiError(res, 404, "not_found", "Tenant not found.");
   res.json(serializeShop(result.rows[0]));
+});
+
+platformRouter.post("/tenants/:shopId/branches", async (req, res) => {
+  const parsed = createBranchSchema.safeParse(req.body);
+  if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid branch.");
+
+  const shop = await pool.query(
+    "SELECT id FROM shops WHERE id = $1 AND id <> '00000000-0000-4000-8000-000000000000' LIMIT 1",
+    [req.params.shopId],
+  );
+  if (!shop.rowCount) return sendApiError(res, 404, "not_found", "Tenant not found.");
+
+  const result = await pool.query(
+    `
+      INSERT INTO branches (id, shop_id, name, location, status)
+      VALUES ($1, $2, $3, $4, 'active')
+      RETURNING id, shop_id, name, location, status, created_at
+    `,
+    [
+      crypto.randomUUID(),
+      req.params.shopId,
+      parsed.data.name.trim(),
+      parsed.data.location?.trim() || null,
+    ],
+  );
+
+  res.status(201).json(serializeBranch(result.rows[0]));
 });
 
 platformRouter.patch("/tenants/:shopId/features", async (req, res) => {

@@ -59,6 +59,22 @@ export async function migrate() {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS branches (
+        id uuid PRIMARY KEY,
+        shop_id uuid NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+        name text NOT NULL,
+        location text NULL,
+        status text NOT NULL DEFAULT 'active',
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS branches_shop_id_idx
+      ON branches(shop_id, created_at DESC);
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS products (
         id uuid PRIMARY KEY,
         shop_id uuid NOT NULL REFERENCES shops(id) ON DELETE CASCADE,

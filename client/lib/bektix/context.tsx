@@ -56,6 +56,7 @@ type BektixContextValue = {
     }) => Promise<void>;
     updateTenantStatus: (shopId: string, status: Shop["status"]) => Promise<void>;
     updateTenantFeatures: (shopId: string, features: Partial<Record<TenantFeature, boolean>>) => Promise<void>;
+    createBranch: (shopId: string, input: { name: string; location?: string }) => Promise<void>;
     updateShopDetails: (patch: { name?: string; businessType?: BusinessType }) => Promise<void>;
     updateShopPreferences: (patch: Partial<ShopPreferences>) => Promise<void>;
     resetSystemData: () => Promise<void>;
@@ -306,6 +307,10 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       },
       updateTenantFeatures: async (shopId, features) => {
         await api.updateTenantFeatures(shopId, features);
+        await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
+      },
+      createBranch: async (shopId, input) => {
+        await api.createBranch(shopId, input);
         await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
       },
       updateShopDetails: async (patch) => {

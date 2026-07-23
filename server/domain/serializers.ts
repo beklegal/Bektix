@@ -1,6 +1,7 @@
 import type {
   BankDeposit,
   BankDepositLineItem,
+  Branch,
   Debtor,
   Employee,
   PayrollRun,
@@ -81,6 +82,24 @@ export function serializeUser(row: {
     email: row.email,
     role: row.role as User["role"],
     status: row.status as User["status"],
+    createdAt: iso(row.created_at),
+  };
+}
+
+export function serializeBranch(row: {
+  id: string;
+  shop_id: string;
+  name: string;
+  location: string | null;
+  status: string;
+  created_at: unknown;
+}): Branch {
+  return {
+    id: row.id,
+    shopId: row.shop_id,
+    name: row.name,
+    location: row.location ?? undefined,
+    status: row.status as Branch["status"],
     createdAt: iso(row.created_at),
   };
 }

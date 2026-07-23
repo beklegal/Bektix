@@ -49,6 +49,15 @@ export interface Shop {
   preferences: ShopPreferences;
 }
 
+export interface Branch {
+  id: string;
+  shopId: string;
+  name: string;
+  location?: string;
+  status: ShopStatus;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   shopId: string;

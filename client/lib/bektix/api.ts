@@ -2,6 +2,7 @@ import type {
   AuthLoginRequest,
   AuthResponse,
   CreateBankDepositRequest,
+  CreateBranchRequest,
   CreateDebtorRequest,
   CreateEmployeeRequest,
   CreatePayrollRunRequest,
@@ -27,6 +28,7 @@ import type {
   UpdateTenantStatusRequest,
 } from "@shared/api";
 import type { BankDeposit, Debtor, Product, Sale, Shop, ShopPreferences, User } from "@shared/bektix";
+import type { Branch } from "@shared/bektix";
 
 async function parseErrorMessage(response: Response) {
   try {
@@ -69,6 +71,8 @@ export const api = {
   getTenants: () => apiRequest<PlatformTenant[]>("/api/platform/tenants"),
   createTenant: (input: CreateTenantRequest) =>
     apiRequest<PlatformTenant>("/api/platform/tenants", { method: "POST", json: input }),
+  createBranch: (shopId: string, input: CreateBranchRequest) =>
+    apiRequest<Branch>(`/api/platform/tenants/${shopId}/branches`, { method: "POST", json: input }),
   updateTenantStatus: (shopId: string, patch: UpdateTenantStatusRequest) =>
     apiRequest<Shop>(`/api/platform/tenants/${shopId}/status`, { method: "PATCH", json: patch }),
   updateTenantFeatures: (shopId: string, patch: UpdateTenantFeaturesRequest) =>

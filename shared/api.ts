@@ -1,5 +1,6 @@
 import type {
   BankDeposit,
+  Branch,
   Debtor,
   Employee,
   PayrollRun,
@@ -50,6 +51,8 @@ export interface PlatformTenant {
   shop: Shop;
   admin: User | null;
   userCount: number;
+  branches: Branch[];
+  branchCount: number;
 }
 
 export interface CreateTenantRequest {
@@ -63,6 +66,11 @@ export interface CreateTenantRequest {
 
 export type UpdateTenantFeaturesRequest = Partial<Shop["features"]>;
 export type UpdateTenantStatusRequest = Pick<Shop, "status">;
+
+export interface CreateBranchRequest {
+  name: string;
+  location?: string;
+}
 
 export interface CreateProductRequest
   extends Pick<

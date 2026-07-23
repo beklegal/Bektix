@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useBektix } from "@/lib/bektix/context";
 import type { BusinessType, TenantFeature } from "@shared/bektix";
-import { Building2, Plus, ShieldCheck } from "lucide-react";
+import { Building2, GitBranch, MapPin, Plus, ShieldCheck } from "lucide-react";
 
 const featureOptions: Array<{ key: TenantFeature; label: string }> = [
   { key: "payroll", label: "Payroll" },
@@ -26,7 +26,9 @@ export default function SuperAdmin() {
   const { tenants, actions } = useBektix();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [branchTenantId, setBranchTenantId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [branchSaving, setBranchSaving] = useState(false);
   const [draft, setDraft] = useState({
     shopName: "",
     businessType: "other" as BusinessType,
@@ -35,11 +37,13 @@ export default function SuperAdmin() {
     adminPassword: "",
     features: initialFeatures,
   });
+  const [branchDraft, setBranchDraft] = useState({ name: "", location: "" });
 
   const stats = useMemo(
     () => ({
       active: tenants.filter((tenant) => tenant.shop.status === "active").length,
       users: tenants.reduce((sum, tenant) => sum + tenant.userCount, 0),
+      branches: tenants.reduce((sum, tenant) => sum + tenant.branchCount, 0),
     }),
     [tenants],
   );
@@ -63,6 +67,30 @@ export default function SuperAdmin() {
     }
   };
 
+  const createBranch = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!branchTenantId) return;
+
+    setBranchSaving(true);
+    try {
+      await actions.createBranch(branchTenantId, {
+        name: branchDraft.name,
+        location: branchDraft.location || undefined,
+      });
+      setBranchDraft({ name: "", location: "" });
+      setBranchTenantId(null);
+      toast({ title: "Branch created", description: "The tenant can now use this branch record." });
+    } catch (err) {
+      toast({
+        title: "Could not create branch",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBranchSaving(false);
+    }
+  };
+
   const updateFeature = async (shopId: string, feature: TenantFeature, enabled: boolean) => {
     try {
       await actions.updateTenantFeatures(shopId, { [feature]: enabled });
@@ -72,8 +100,8 @@ export default function SuperAdmin() {
   };
 
   return (
-    <AppShell title="Super Admin" description="Manage BEKTIX tenants, tenant admins, and module access." active="super-admin">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <AppShell title="Super Admin" description="Manage BEKTIX tenants, branches, tenant admins, and module access." active="super-admin">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Tenants</p>
           <p className="mt-2 text-2xl font-semibold">{tenants.length}</p>
@@ -85,6 +113,10 @@ export default function SuperAdmin() {
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Tenant users</p>
           <p className="mt-2 text-2xl font-semibold">{stats.users}</p>
+        </Card>
+        <Card className="p-5">
+          <p className="text-sm text-muted-foreground">Branches</p>
+          <p className="mt-2 text-2xl font-semibold">{stats.branches}</p>
         </Card>
       </div>
 
@@ -132,13 +164,29 @@ export default function SuperAdmin() {
                   <Badge variant={tenant.shop.status === "active" ? "secondary" : "destructive"}>{tenant.shop.status}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Admin: {tenant.admin?.name || "None"} {tenant.admin?.email ? `(${tenant.admin.email})` : ""} · {tenant.userCount} users
+                  Admin: {tenant.admin?.name || "None"} {tenant.admin?.email ? `(${tenant.admin.email})` : ""} - {tenant.userCount} users - {tenant.branchCount} branches
                 </p>
               </div>
-              <Button variant="outline" onClick={() => actions.updateTenantStatus(tenant.shop.id, tenant.shop.status === "active" ? "inactive" : "active")}>
-                {tenant.shop.status === "active" ? "Deactivate" : "Activate"}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => setBranchTenantId(tenant.shop.id)}>
+                  <GitBranch className="h-4 w-4" />
+                  Add branch
+                </Button>
+                <Button variant="outline" onClick={() => actions.updateTenantStatus(tenant.shop.id, tenant.shop.status === "active" ? "inactive" : "active")}>
+                  {tenant.shop.status === "active" ? "Deactivate" : "Activate"}
+                </Button>
+              </div>
             </div>
+            {tenant.branches.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {tenant.branches.map((branch) => (
+                  <Badge key={branch.id} variant="outline" className="gap-1 py-1">
+                    <MapPin className="h-3 w-3" />
+                    {branch.name}{branch.location ? ` - ${branch.location}` : ""}
+                  </Badge>
+                ))}
+              </div>
+            )}
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {featureOptions.map((feature) => (
                 <label key={feature.key} className="flex items-center gap-2 rounded-md border p-3 text-sm">
@@ -149,6 +197,16 @@ export default function SuperAdmin() {
             </div>
           </Card>
         ))}
+        <Dialog open={Boolean(branchTenantId)} onOpenChange={(nextOpen) => !nextOpen && setBranchTenantId(null)}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Add branch</DialogTitle></DialogHeader>
+            <form onSubmit={createBranch} className="space-y-4">
+              <Input placeholder="Branch name" value={branchDraft.name} onChange={(e) => setBranchDraft({ ...branchDraft, name: e.target.value })} required />
+              <Input placeholder="Location or address" value={branchDraft.location} onChange={(e) => setBranchDraft({ ...branchDraft, location: e.target.value })} />
+              <Button type="submit" className="w-full" disabled={branchSaving}>{branchSaving ? "Creating..." : "Create branch"}</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
         {!tenants.length && (
           <Card className="p-8 text-center text-sm text-muted-foreground">
             <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-accent" />
