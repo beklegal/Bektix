@@ -2,6 +2,7 @@ import express from "express";
 import { z } from "zod";
 import type { BusinessType, ShopPreferences } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
+import { requireTenant } from "../auth/requireTenant.js";
 import { pool } from "../db/pool.js";
 import { normalizeShopPreferences } from "../domain/preferences.js";
 import { serializeShop } from "../domain/serializers.js";
@@ -9,6 +10,7 @@ import { sendApiError } from "../http/errors.js";
 
 export const shopRouter = express.Router();
 shopRouter.use(requireUser);
+shopRouter.use(requireTenant);
 
 function requireAdmin(req: express.Request, res: express.Response) {
   if (req.auth?.role !== "admin") {
@@ -22,7 +24,7 @@ shopRouter.get("/", async (req, res) => {
   const { shopId } = req.auth!;
 
   const result = await pool.query(
-    "SELECT id, name, business_type, status, created_at, preferences FROM shops WHERE id = $1 LIMIT 1",
+    "SELECT id, name, business_type, status, created_at, features, preferences FROM shops WHERE id = $1 LIMIT 1",
     [shopId],
   );
   const row = result.rows[0];
@@ -61,7 +63,7 @@ shopRouter.patch("/", async (req, res) => {
       UPDATE shops
       SET ${sets.join(", ")}
       WHERE id = $${values.length}
-      RETURNING id, name, business_type, status, created_at, preferences
+      RETURNING id, name, business_type, status, created_at, features, preferences
     `,
     values,
   );
@@ -101,7 +103,7 @@ shopRouter.patch("/preferences", async (req, res) => {
       UPDATE shops
       SET preferences = $1
       WHERE id = $2
-      RETURNING id, name, business_type, status, created_at, preferences
+      RETURNING id, name, business_type, status, created_at, features, preferences
     `,
     [next, shopId],
   );

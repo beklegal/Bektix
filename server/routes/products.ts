@@ -2,12 +2,14 @@ import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
 import { requireUser } from "../auth/requireUser.js";
+import { requireTenant } from "../auth/requireTenant.js";
 import { pool } from "../db/pool.js";
 import { serializeProduct } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
 
 export const productsRouter = express.Router();
 productsRouter.use(requireUser);
+productsRouter.use(requireTenant);
 
 const createProductSchema = z.object({
   name: z.string().min(1),

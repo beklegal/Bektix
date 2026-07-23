@@ -66,7 +66,7 @@ function StockBadge({ product, lowStockThreshold }: { product: Product; lowStock
 export default function Reports() {
   const navigate = useNavigate();
   const { shop, user, sales, products } = useBektix();
-  const currency = shop?.preferences.currency || "GHâ‚µ";
+  const currency = shop?.preferences.currency || "GHS";
   const lowStockThreshold = shop?.preferences.lowStockThreshold ?? 10;
   const isAdmin = user?.role === "admin";
 

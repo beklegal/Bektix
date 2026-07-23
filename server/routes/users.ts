@@ -3,6 +3,7 @@ import express from "express";
 import { z } from "zod";
 import type { UserRole, UserStatus } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
+import { requireFeature } from "../auth/requireFeature.js";
 import { hashPassword } from "../auth/password.js";
 import { pool } from "../db/pool.js";
 import { serializeUser } from "../domain/serializers.js";
@@ -10,6 +11,7 @@ import { sendApiError } from "../http/errors.js";
 
 export const usersRouter = express.Router();
 usersRouter.use(requireUser);
+usersRouter.use(requireFeature("users"));
 
 function requireAdmin(req: express.Request, res: express.Response) {
   if (req.auth?.role !== "admin") {

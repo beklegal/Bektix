@@ -3,12 +3,14 @@ import express from "express";
 import { z } from "zod";
 import type { PaymentMethod, PayerType } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
+import { requireTenant } from "../auth/requireTenant.js";
 import { pool } from "../db/pool.js";
 import { serializeSale, serializeSaleLineItem } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
 
 export const salesRouter = express.Router();
 salesRouter.use(requireUser);
+salesRouter.use(requireTenant);
 
 function generateReceiptNumber() {
   const year = new Date().getFullYear();

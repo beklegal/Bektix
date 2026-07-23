@@ -46,6 +46,24 @@ export interface AuthResponse {
   shop: Shop;
 }
 
+export interface PlatformTenant {
+  shop: Shop;
+  admin: User | null;
+  userCount: number;
+}
+
+export interface CreateTenantRequest {
+  shopName: string;
+  businessType: Shop["businessType"];
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+  features: Partial<Shop["features"]>;
+}
+
+export type UpdateTenantFeaturesRequest = Partial<Shop["features"]>;
+export type UpdateTenantStatusRequest = Pick<Shop, "status">;
+
 export interface CreateProductRequest
   extends Pick<
     Product,
@@ -66,7 +84,7 @@ export interface CreateUserRequest {
   name: string;
   email: string;
   password: string;
-  role: Exclude<User["role"], "admin">;
+  role: Exclude<User["role"], "admin" | "super_admin">;
 }
 
 export interface CreateSaleRequest {

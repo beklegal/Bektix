@@ -26,8 +26,8 @@ const NotFound = () => {
           <div className="mb-6 flex justify-center">
             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-border bg-card">
               <img
-                src="/Jilkem%20Logo.jpeg"
-                alt="Jilkem Company Limited logo"
+                src="/BEKTIX%20LOGO.png"
+                alt="BEKTIX logo"
                 className="h-10 w-10 object-contain"
               />
             </div>

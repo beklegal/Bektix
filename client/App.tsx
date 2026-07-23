@@ -21,9 +21,13 @@ import AppsServices from "./pages/AppsServices";
 import Payroll from "./pages/Payroll";
 import Creditors from "./pages/Creditors";
 import Banking from "./pages/Banking";
+import SuperAdmin from "./pages/SuperAdmin";
 import { BektixProvider } from "@/lib/bektix/context";
 import RequireAuth from "@/components/RequireAuth";
 import RequireAdmin from "@/components/RequireAdmin";
+import RequireTenant from "@/components/RequireTenant";
+import RequireFeature from "@/components/RequireFeature";
+import RequireSuperAdmin from "@/components/RequireSuperAdmin";
 
 const queryClient = new QueryClient();
 
@@ -38,10 +42,22 @@ const App = () => (
             <Route path="/" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
+              path="/super-admin"
+              element={
+                <RequireAuth>
+                  <RequireSuperAdmin>
+                    <SuperAdmin />
+                  </RequireSuperAdmin>
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/dashboard"
               element={
                 <RequireAuth>
-                  <Dashboard />
+                  <RequireTenant>
+                    <Dashboard />
+                  </RequireTenant>
                 </RequireAuth>
               }
             />
@@ -49,7 +65,9 @@ const App = () => (
               path="/inventory"
               element={
                 <RequireAuth>
-                  <Inventory />
+                  <RequireTenant>
+                    <Inventory />
+                  </RequireTenant>
                 </RequireAuth>
               }
             />
@@ -57,7 +75,9 @@ const App = () => (
               path="/sales"
               element={
                 <RequireAuth>
-                  <Sales />
+                  <RequireTenant>
+                    <Sales />
+                  </RequireTenant>
                 </RequireAuth>
               }
             />
@@ -65,7 +85,9 @@ const App = () => (
               path="/reports"
               element={
                 <RequireAuth>
-                  <Reports />
+                  <RequireFeature feature="reports">
+                    <Reports />
+                  </RequireFeature>
                 </RequireAuth>
               }
             />
@@ -73,7 +95,9 @@ const App = () => (
               path="/debtors"
               element={
                 <RequireAuth>
-                  <Debtors />
+                  <RequireFeature feature="debtors">
+                    <Debtors />
+                  </RequireFeature>
                 </RequireAuth>
               }
             />
@@ -81,7 +105,9 @@ const App = () => (
               path="/users"
               element={
                 <RequireAuth>
-                  <Users />
+                  <RequireFeature feature="users">
+                    <Users />
+                  </RequireFeature>
                 </RequireAuth>
               }
             />
@@ -90,7 +116,9 @@ const App = () => (
               element={
                 <RequireAuth>
                   <RequireAdmin>
-                    <AppsServices />
+                    <RequireTenant>
+                      <AppsServices />
+                    </RequireTenant>
                   </RequireAdmin>
                 </RequireAuth>
               }
@@ -100,7 +128,9 @@ const App = () => (
               element={
                 <RequireAuth>
                   <RequireAdmin>
-                    <Payroll />
+                    <RequireFeature feature="payroll">
+                      <Payroll />
+                    </RequireFeature>
                   </RequireAdmin>
                 </RequireAuth>
               }
@@ -110,7 +140,9 @@ const App = () => (
               element={
                 <RequireAuth>
                   <RequireAdmin>
-                    <Creditors />
+                    <RequireFeature feature="creditors">
+                      <Creditors />
+                    </RequireFeature>
                   </RequireAdmin>
                 </RequireAuth>
               }
@@ -120,7 +152,9 @@ const App = () => (
               element={
                 <RequireAuth>
                   <RequireAdmin>
-                    <Banking />
+                    <RequireFeature feature="banking">
+                      <Banking />
+                    </RequireFeature>
                   </RequireAdmin>
                 </RequireAuth>
               }
@@ -129,7 +163,9 @@ const App = () => (
               path="/settings"
               element={
                 <RequireAuth>
-                  <Settings />
+                  <RequireTenant>
+                    <Settings />
+                  </RequireTenant>
                 </RequireAuth>
               }
             />
@@ -137,7 +173,9 @@ const App = () => (
               path="/receipt/:saleId"
               element={
                 <RequireAuth>
-                  <Receipt />
+                  <RequireTenant>
+                    <Receipt />
+                  </RequireTenant>
                 </RequireAuth>
               }
             />

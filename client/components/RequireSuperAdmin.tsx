@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useBektix } from "@/lib/bektix/context";
 
-export default function RequireAdmin({ children }: { children: ReactNode }) {
+export default function RequireSuperAdmin({ children }: { children: ReactNode }) {
   const { authStatus, user } = useBektix();
 
   if (authStatus === "loading") {
@@ -13,13 +13,7 @@ export default function RequireAdmin({ children }: { children: ReactNode }) {
     );
   }
 
-  if (user?.role === "super_admin") {
-    return <Navigate to="/super-admin" replace />;
-  }
-
-  if (user?.role !== "admin") {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (user?.role !== "super_admin") return <Navigate to="/dashboard" replace />;
 
   return children;
 }

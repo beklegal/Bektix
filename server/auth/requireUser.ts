@@ -11,6 +11,7 @@ type JoinedRow = {
   shop_status: string;
   shop_created_at: unknown;
   shop_preferences: unknown;
+  shop_features: unknown;
   shop_session_version: number;
 };
 
@@ -41,6 +42,7 @@ export const requireUser: RequestHandler = async (req, res, next) => {
         s.status AS shop_status,
         s.created_at AS shop_created_at,
         s.preferences AS shop_preferences,
+        s.features AS shop_features,
         s.session_version AS shop_session_version
       FROM shops s
       WHERE s.id = $1
@@ -115,6 +117,7 @@ export const requireUser: RequestHandler = async (req, res, next) => {
     business_type: shopRow.shop_business_type,
     status: shopRow.shop_status,
     created_at: shopRow.shop_created_at,
+    features: shopRow.shop_features,
     preferences: shopRow.shop_preferences,
   });
 

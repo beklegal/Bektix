@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
 import { requireUser } from "../auth/requireUser.js";
+import { requireFeature } from "../auth/requireFeature.js";
 import { pool } from "../db/pool.js";
 import {
   serializePurchaseInvoice,
@@ -14,6 +15,7 @@ import { sendApiError } from "../http/errors.js";
 
 export const creditorsRouter = express.Router();
 creditorsRouter.use(requireUser);
+creditorsRouter.use(requireFeature("creditors"));
 creditorsRouter.use((req, res, next) => {
   if (req.auth?.role !== "admin") {
     return sendApiError(res, 403, "forbidden", "Admin access required.");

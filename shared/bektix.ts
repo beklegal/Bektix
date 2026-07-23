@@ -5,7 +5,9 @@ export type BusinessType =
   | "electronics"
   | "other";
 
-export type UserRole = "admin" | "cashier" | "staff";
+export type TenantFeature = "payroll" | "creditors" | "banking" | "debtors" | "reports" | "users";
+export type FeatureAccess = Record<TenantFeature, boolean>;
+export type UserRole = "super_admin" | "admin" | "cashier" | "staff";
 export type UserStatus = "active" | "inactive";
 
 export type PaymentMethod = "cash" | "mobileMoney" | "cheque";
@@ -42,6 +44,7 @@ export interface Shop {
   name: string;
   businessType: BusinessType;
   status?: ShopStatus;
+  features: FeatureAccess;
   createdAt: string; // ISO
   preferences: ShopPreferences;
 }

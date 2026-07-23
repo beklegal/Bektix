@@ -11,8 +11,10 @@ import type {
   CreateSaleRequest,
   CreateSupplierPaymentRequest,
   CreateSupplierRequest,
+  CreateTenantRequest,
   CreditorsPayload,
   PayrollPayload,
+  PlatformTenant,
   UpdateBankDepositStatusRequest,
   CreateUserRequest,
   UpdateDebtorRequest,
@@ -21,6 +23,8 @@ import type {
   UpdateProductRequest,
   UpdatePurchaseOrderStatusRequest,
   UpdateSupplierRequest,
+  UpdateTenantFeaturesRequest,
+  UpdateTenantStatusRequest,
 } from "@shared/api";
 import type { BankDeposit, Debtor, Product, Sale, Shop, ShopPreferences, User } from "@shared/bektix";
 
@@ -61,6 +65,14 @@ export const api = {
   login: (input: AuthLoginRequest) =>
     apiRequest<AuthResponse>("/api/auth/login", { method: "POST", json: input }),
   logout: () => apiRequest<void>("/api/auth/logout", { method: "POST" }),
+
+  getTenants: () => apiRequest<PlatformTenant[]>("/api/platform/tenants"),
+  createTenant: (input: CreateTenantRequest) =>
+    apiRequest<PlatformTenant>("/api/platform/tenants", { method: "POST", json: input }),
+  updateTenantStatus: (shopId: string, patch: UpdateTenantStatusRequest) =>
+    apiRequest<Shop>(`/api/platform/tenants/${shopId}/status`, { method: "PATCH", json: patch }),
+  updateTenantFeatures: (shopId: string, patch: UpdateTenantFeaturesRequest) =>
+    apiRequest<Shop>(`/api/platform/tenants/${shopId}/features`, { method: "PATCH", json: patch }),
 
   getShop: () => apiRequest<Shop>("/api/shop"),
   updateShop: (patch: { name?: string; businessType?: Shop["businessType"] }) =>

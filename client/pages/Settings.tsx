@@ -65,7 +65,7 @@ export default function Settings() {
         <Card className="p-6">
           <p className="text-lg font-semibold">Admins only</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Settings can only be changed by the Jilkem owner account (Admin role).
+            Settings can only be changed by the BEKTIX owner account (Admin role).
           </p>
         </Card>
       </AppShell>
@@ -197,7 +197,7 @@ export default function Settings() {
 
         <Card className="p-6">
           <p className="text-lg font-semibold">Actions</p>
-          <p className="mt-1 text-sm text-muted-foreground">Apply changes to Jilkem.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Apply changes to BEKTIX.</p>
           <Button
             onClick={save}
             disabled={isSaving}

@@ -2,12 +2,14 @@ import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
 import { requireUser } from "../auth/requireUser.js";
+import { requireFeature } from "../auth/requireFeature.js";
 import { pool } from "../db/pool.js";
 import { serializeDebtor } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
 
 export const debtorsRouter = express.Router();
 debtorsRouter.use(requireUser);
+debtorsRouter.use(requireFeature("debtors"));
 
 const debtorBaseSchema = {
   name: z.string().min(1),

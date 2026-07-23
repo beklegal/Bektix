@@ -13,6 +13,7 @@ export async function migrate() {
         business_type text NOT NULL,
         status text NOT NULL DEFAULT 'active',
         session_version integer NOT NULL DEFAULT 0,
+        features jsonb NOT NULL DEFAULT '{}'::jsonb,
         preferences jsonb NOT NULL,
         created_at timestamptz NOT NULL DEFAULT now()
       );
@@ -21,6 +22,11 @@ export async function migrate() {
     await client.query(`
       ALTER TABLE shops
       ADD COLUMN IF NOT EXISTS session_version integer NOT NULL DEFAULT 0;
+    `);
+
+    await client.query(`
+      ALTER TABLE shops
+      ADD COLUMN IF NOT EXISTS features jsonb NOT NULL DEFAULT '{}'::jsonb;
     `);
 
     await client.query(`

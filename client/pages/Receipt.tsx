@@ -63,7 +63,7 @@ export default function Receipt() {
 
   useEffect(() => {
     if (!sale) return;
-    document.title = `Receipt ${sale.receiptNumber} - Jilkem`;
+    document.title = `Receipt ${sale.receiptNumber} - BEKTIX`;
   }, [sale]);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function Receipt() {
 
   const receiptDate = new Date(sale.createdAt).toLocaleString();
   const cashierName = sale.cashierName || user?.email || "Cashier";
-  const shopName = shop?.name || "Jilkem Company Limited";
+  const shopName = shop?.name || "BEKTIX";
 
   return (
     <div className="bektix-receipt-page min-h-screen bg-background p-6">
@@ -165,7 +165,7 @@ export default function Receipt() {
               </section>
 
               <section className="bektix-receipt-box bektix-receipt-brand">
-                <img src="/Jilkem%20Logo.jpeg" alt="Jilkem Company Limited logo" />
+                <img src="/BEKTIX%20LOGO.png" alt="BEKTIX logo" />
                 <div>
                   <h1>{shopName}</h1>
                   <p>Shop Management System</p>
@@ -251,7 +251,7 @@ export default function Receipt() {
               <span>
                 Powered by{" "}
                 <Link to="/dashboard" className="underline underline-offset-2">
-                  Jilkem
+                  BEKTIX
                 </Link>
               </span>
             </footer>

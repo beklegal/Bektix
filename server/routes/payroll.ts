@@ -2,12 +2,14 @@ import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
 import { requireUser } from "../auth/requireUser.js";
+import { requireFeature } from "../auth/requireFeature.js";
 import { pool } from "../db/pool.js";
 import { serializeEmployee, serializePayrollRun } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
 
 export const payrollRouter = express.Router();
 payrollRouter.use(requireUser);
+payrollRouter.use(requireFeature("payroll"));
 payrollRouter.use((req, res, next) => {
   if (req.auth?.role !== "admin") {
     return sendApiError(res, 403, "forbidden", "Admin access required.");

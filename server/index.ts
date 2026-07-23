@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
 import { migrate } from "./db/migrate.js";
-import { bootstrapSingleShop } from "./db/bootstrap.js";
+import { bootstrapSuperAdmin } from "./db/bootstrap.js";
 import { authRouter } from "./routes/auth.js";
 import { productsRouter } from "./routes/products.js";
 import { usersRouter } from "./routes/users.js";
@@ -12,6 +12,7 @@ import { debtorsRouter } from "./routes/debtors.js";
 import { payrollRouter } from "./routes/payroll.js";
 import { creditorsRouter } from "./routes/creditors.js";
 import { bankingRouter } from "./routes/banking.js";
+import { platformRouter } from "./routes/platform.js";
 import {
   apiRateLimit,
   rejectCrossOriginWrites,
@@ -34,7 +35,7 @@ export async function createServer() {
   app.use("/api", rejectCrossOriginWrites(), apiRateLimit);
 
   await migrate();
-  await bootstrapSingleShop();
+  await bootstrapSuperAdmin();
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
@@ -43,6 +44,7 @@ export async function createServer() {
   });
 
   app.use("/api/auth", authRouter);
+  app.use("/api/platform", platformRouter);
   app.use("/api/shop", shopRouter);
   app.use("/api/products", productsRouter);
   app.use("/api/users", usersRouter);

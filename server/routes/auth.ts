@@ -56,7 +56,7 @@ authRouter.post("/login", loginRateLimit, async (req, res) => {
   if (!ok) return sendApiError(res, 401, "unauthorized", "Incorrect password.");
 
   const shopResult = await pool.query(
-    "SELECT id, name, business_type, status, created_at, preferences, session_version FROM shops WHERE id = $1 LIMIT 1",
+    "SELECT id, name, business_type, status, created_at, features, preferences, session_version FROM shops WHERE id = $1 LIMIT 1",
     [userRow.shop_id],
   );
   const shopRow = shopResult.rows[0];

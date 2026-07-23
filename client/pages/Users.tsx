@@ -139,7 +139,7 @@ export default function Users() {
         <Card className="p-6">
           <p className="text-lg font-semibold">Admins only</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            User management is only available to the Jilkem owner account (Admin role).
+            User management is only available to the BEKTIX owner account (Admin role).
           </p>
         </Card>
       </AppShell>
@@ -317,7 +317,7 @@ export default function Users() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add user</DialogTitle>
-            <DialogDescription>Invite a staff member to Jilkem.</DialogDescription>
+            <DialogDescription>Invite a staff member to BEKTIX.</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4">

@@ -15,13 +15,13 @@ export default function AuthShell({ title, subtitle, children }: AuthShellProps)
           <div>
             <div className="flex items-center gap-4 mb-8">
               <img
-                src="/Jilkem%20Logo.jpeg"
-                alt="Jilkem Company Limited logo"
+                src="/BEKTIX%20LOGO.png"
+                alt="BEKTIX logo"
                 className="h-12 w-auto rounded-2xl border border-white/10 bg-white/10 p-1"
               />
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-accent-foreground/80">JILKEM</p>
-                <p className="text-xl font-semibold">Jilkem Company Limited</p>
+                <p className="text-sm uppercase tracking-[0.3em] text-accent-foreground/80">BEKTIX</p>
+                <p className="text-xl font-semibold">BEKTIX</p>
               </div>
             </div>
 
@@ -36,8 +36,8 @@ export default function AuthShell({ title, subtitle, children }: AuthShellProps)
               <p className="text-sm opacity-80">Inventory, sales, and reports in one place.</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-inner shadow-black/5">
-              <h3 className="text-xl font-semibold mb-2">Built for Jilkem</h3>
-              <p className="text-sm opacity-80">A single workspace for Samuel Kissi and the shop team.</p>
+              <h3 className="text-xl font-semibold mb-2">Built for BEKTIX</h3>
+              <p className="text-sm opacity-80">A single workspace for your BEKTIX super admin and the shop team.</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-inner shadow-black/5">
               <h3 className="text-xl font-semibold mb-2">Fast POS</h3>
@@ -47,7 +47,7 @@ export default function AuthShell({ title, subtitle, children }: AuthShellProps)
         </div>
 
         <p className="relative z-10 text-sm opacity-80">
-          Jilkem Company Limited - reliable records for everyday shop operations.
+          BEKTIX - reliable records for everyday shop operations.
         </p>
       </div>
 
@@ -57,13 +57,13 @@ export default function AuthShell({ title, subtitle, children }: AuthShellProps)
             <div className="lg:hidden mb-8 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-border bg-card">
                 <img
-                  src="/Jilkem%20Logo.jpeg"
-                  alt="Jilkem Company Limited logo"
+                  src="/BEKTIX%20LOGO.png"
+                  alt="BEKTIX logo"
                   className="h-9 w-9 object-contain"
                 />
               </div>
               <div>
-                <p className="text-lg font-semibold text-foreground">Jilkem</p>
+                <p className="text-lg font-semibold text-foreground">BEKTIX</p>
                 <p className="text-sm text-muted-foreground">Company Limited</p>
               </div>
             </div>

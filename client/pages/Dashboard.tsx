@@ -68,7 +68,7 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold text-foreground mb-1 sm:text-3xl">
             Welcome back{shop?.name ? `, ${shop.name}` : ""}!
           </h2>
-          <p className="text-muted-foreground">Here's what's happening at Jilkem today</p>
+          <p className="text-muted-foreground">Here's what's happening at BEKTIX today</p>
         </div>
 
         {/* Top Stats Cards */}

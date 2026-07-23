@@ -11,12 +11,12 @@ function optionalEnvValue(value: unknown, placeholders: string[]) {
 const baseSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
-  OWNER_BOOTSTRAP_EMAIL: z.preprocess(
-    (v) => optionalEnvValue(v, ["__OWNER_EMAIL__"]),
+  SUPER_ADMIN_BOOTSTRAP_EMAIL: z.preprocess(
+    (v) => optionalEnvValue(v, ["__SUPER_ADMIN_EMAIL__"]),
     z.string().email().optional(),
   ),
-  OWNER_BOOTSTRAP_PASSWORD: z.preprocess(
-    (v) => optionalEnvValue(v, ["__OWNER_PASSWORD__"]),
+  SUPER_ADMIN_BOOTSTRAP_PASSWORD: z.preprocess(
+    (v) => optionalEnvValue(v, ["__SUPER_ADMIN_PASSWORD__"]),
     z.string().min(8).optional(),
   ),
   NODE_ENV: z.enum(["development", "production", "test"]).optional(),
@@ -41,6 +41,8 @@ const strictSchema = baseSchema.extend({
       (v) => !v.includes("__CHANGE_ME_TO_A_LONG_RANDOM_SECRET__"),
       "JWT_SECRET must be set to a long random secret.",
     ),
+  SUPER_ADMIN_BOOTSTRAP_EMAIL: z.string().email(),
+  SUPER_ADMIN_BOOTSTRAP_PASSWORD: z.string().min(8),
 });
 
 const devSchema = baseSchema.extend({
@@ -63,8 +65,8 @@ function getEnv() {
   const envValue = {
     DATABASE_URL: databaseUrl,
     JWT_SECRET: jwtSecret,
-    OWNER_BOOTSTRAP_EMAIL: process.env.OWNER_BOOTSTRAP_EMAIL,
-    OWNER_BOOTSTRAP_PASSWORD: process.env.OWNER_BOOTSTRAP_PASSWORD,
+    SUPER_ADMIN_BOOTSTRAP_EMAIL: process.env.SUPER_ADMIN_BOOTSTRAP_EMAIL,
+    SUPER_ADMIN_BOOTSTRAP_PASSWORD: process.env.SUPER_ADMIN_BOOTSTRAP_PASSWORD,
     NODE_ENV: nodeEnv as "development" | "production" | "test",
   };
 

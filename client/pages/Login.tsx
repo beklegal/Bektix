@@ -13,19 +13,19 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { session, actions } = useBektix();
+  const { session, user, actions } = useBektix();
 
   useEffect(() => {
-    if (session) navigate("/dashboard", { replace: true });
-  }, [navigate, session]);
+    if (session) navigate(user?.role === "super_admin" ? "/super-admin" : "/dashboard", { replace: true });
+  }, [navigate, session, user?.role]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      await actions.login({ email, password });
-      navigate("/dashboard");
+      const payload = await actions.login({ email, password });
+      navigate(payload.user.role === "super_admin" ? "/super-admin" : "/dashboard");
     } catch (err) {
       toast({
         title: "Sign in failed",
@@ -38,7 +38,7 @@ export default function Login() {
   };
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to Jilkem Company Limited">
+    <AuthShell title="Welcome back" subtitle="Sign in to BEKTIX">
       <form onSubmit={handleLogin} className="space-y-4">
         <div className="space-y-2">
           <label htmlFor="email" className="block text-sm font-medium text-foreground">
@@ -100,7 +100,7 @@ export default function Login() {
 
       <div className="mt-6 border-t border-border pt-6">
         <p className="text-center text-xs text-muted-foreground">
-          Staff accounts are managed by the Jilkem owner account.
+          Accounts are managed by BEKTIX super admin and tenant admins.
         </p>
       </div>
     </AuthShell>

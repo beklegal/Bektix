@@ -61,7 +61,7 @@ function statusBadge(status: Debtor["status"]) {
 
 export default function Debtors() {
   const { shop, debtors, actions } = useBektix();
-  const currency = shop?.preferences.currency || "GHâ‚µ";
+  const currency = shop?.preferences.currency || "GHS";
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

@@ -51,6 +51,7 @@ export default function AppsServices() {
       path: "/payroll",
       icon: UsersRound,
       badge: `${payrollRuns.length} pay runs`,
+      feature: "payroll",
     },
     {
       title: "Creditors & Purchases",
@@ -58,6 +59,7 @@ export default function AppsServices() {
       path: "/creditors",
       icon: BriefcaseBusiness,
       badge: `${purchaseOrders.length} POs`,
+      feature: "creditors",
     },
     {
       title: "Bank Deposits",
@@ -65,6 +67,7 @@ export default function AppsServices() {
       path: "/banking",
       icon: Landmark,
       badge: `${bankDeposits.length} deposits`,
+      feature: "banking",
     },
     {
       title: "Debtors",
@@ -72,6 +75,7 @@ export default function AppsServices() {
       path: "/debtors",
       icon: ReceiptText,
       badge: "Customer credit",
+      feature: "debtors",
     },
     {
       title: "Reports",
@@ -79,6 +83,7 @@ export default function AppsServices() {
       path: "/reports",
       icon: TrendingUp,
       badge: "Analytics",
+      feature: "reports",
     },
     {
       title: "Users",
@@ -86,8 +91,9 @@ export default function AppsServices() {
       path: "/users",
       icon: UserCog,
       badge: "Admin",
+      feature: "users",
     },
-  ];
+  ].filter((module) => shop?.features[module.feature as keyof typeof shop.features]);
 
   return (
     <AppShell

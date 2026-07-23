@@ -2,7 +2,7 @@ import type { CookieOptions, Request, Response } from "express";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { env } from "../env.js";
 
-const USER_COOKIE = "jilkem_session";
+const USER_COOKIE = "bektix_session";
 
 type UserSessionToken = {
   typ: "user";

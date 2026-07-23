@@ -16,10 +16,11 @@ import type {
   ShopPreferences,
   Supplier,
   SupplierPayment,
+  TenantFeature,
   User,
   UserRole,
 } from "@shared/bektix";
-import type { AuthResponse } from "@shared/api";
+import type { AuthResponse, PlatformTenant } from "@shared/api";
 import type { BusinessType, Shop } from "@shared/bektix";
 import { api } from "@/lib/bektix/api";
 
@@ -41,9 +42,20 @@ type BektixContextValue = {
   purchaseInvoices: PurchaseInvoice[];
   supplierPayments: SupplierPayment[];
   bankDeposits: BankDeposit[];
+  tenants: PlatformTenant[];
   actions: {
-    login: (input: { email: string; password: string }) => Promise<void>;
+    login: (input: { email: string; password: string }) => Promise<AuthResponse>;
     logout: () => Promise<void>;
+    createTenant: (input: {
+      shopName: string;
+      businessType: BusinessType;
+      adminName: string;
+      adminEmail: string;
+      adminPassword: string;
+      features: Partial<Record<TenantFeature, boolean>>;
+    }) => Promise<void>;
+    updateTenantStatus: (shopId: string, status: Shop["status"]) => Promise<void>;
+    updateTenantFeatures: (shopId: string, features: Partial<Record<TenantFeature, boolean>>) => Promise<void>;
     updateShopDetails: (patch: { name?: string; businessType?: BusinessType }) => Promise<void>;
     updateShopPreferences: (patch: Partial<ShopPreferences>) => Promise<void>;
     resetSystemData: () => Promise<void>;
@@ -166,11 +178,13 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
   const session = meQuery.data?.session ?? null;
   const user = meQuery.data?.user ?? null;
   const shop = meQuery.data?.shop ?? null;
+  const isTenantUser = authStatus === "authenticated" && user?.role !== "super_admin";
+  const isSuperAdmin = authStatus === "authenticated" && user?.role === "super_admin";
 
   const productsQuery = useQuery({
     queryKey: ["products"],
     queryFn: api.getProducts,
-    enabled: authStatus === "authenticated",
+    enabled: isTenantUser,
     refetchInterval: LIVE_SYNC_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
@@ -181,7 +195,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: api.getUsers,
-    enabled: authStatus === "authenticated",
+    enabled: isTenantUser && Boolean(shop?.features.users),
     refetchInterval: LIVE_SYNC_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
@@ -192,7 +206,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
   const salesQuery = useQuery({
     queryKey: ["sales"],
     queryFn: api.getSales,
-    enabled: authStatus === "authenticated",
+    enabled: isTenantUser,
     refetchInterval: LIVE_SYNC_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
@@ -203,7 +217,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
   const debtorsQuery = useQuery({
     queryKey: ["debtors"],
     queryFn: api.getDebtors,
-    enabled: authStatus === "authenticated",
+    enabled: isTenantUser && Boolean(shop?.features.debtors),
     refetchInterval: LIVE_SYNC_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
@@ -214,7 +228,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
   const payrollQuery = useQuery({
     queryKey: ["payroll"],
     queryFn: api.getPayroll,
-    enabled: authStatus === "authenticated" && user?.role === "admin",
+    enabled: isTenantUser && user?.role === "admin" && Boolean(shop?.features.payroll),
     refetchInterval: LIVE_SYNC_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
@@ -225,7 +239,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
   const creditorsQuery = useQuery({
     queryKey: ["creditors"],
     queryFn: api.getCreditors,
-    enabled: authStatus === "authenticated" && user?.role === "admin",
+    enabled: isTenantUser && user?.role === "admin" && Boolean(shop?.features.creditors),
     refetchInterval: LIVE_SYNC_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
@@ -236,7 +250,18 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
   const bankDepositsQuery = useQuery({
     queryKey: ["bankDeposits"],
     queryFn: api.getBankDeposits,
-    enabled: authStatus === "authenticated" && user?.role === "admin",
+    enabled: isTenantUser && user?.role === "admin" && Boolean(shop?.features.banking),
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    refetchOnMount: "always",
+    refetchOnReconnect: "always",
+    refetchOnWindowFocus: "always",
+  });
+
+  const tenantsQuery = useQuery({
+    queryKey: ["platform", "tenants"],
+    queryFn: api.getTenants,
+    enabled: isSuperAdmin,
     refetchInterval: LIVE_SYNC_INTERVAL_MS,
     refetchIntervalInBackground: true,
     refetchOnMount: "always",
@@ -256,6 +281,8 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries({ queryKey: ["payroll"] });
         await queryClient.invalidateQueries({ queryKey: ["creditors"] });
         await queryClient.invalidateQueries({ queryKey: ["bankDeposits"] });
+        await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
+        return payload;
       },
       logout: async () => {
         await api.logout();
@@ -267,6 +294,19 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         queryClient.removeQueries({ queryKey: ["payroll"] });
         queryClient.removeQueries({ queryKey: ["creditors"] });
         queryClient.removeQueries({ queryKey: ["bankDeposits"] });
+        queryClient.removeQueries({ queryKey: ["platform", "tenants"] });
+      },
+      createTenant: async (input) => {
+        await api.createTenant(input);
+        await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
+      },
+      updateTenantStatus: async (shopId, status) => {
+        await api.updateTenantStatus(shopId, { status });
+        await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
+      },
+      updateTenantFeatures: async (shopId, features) => {
+        await api.updateTenantFeatures(shopId, features);
+        await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
       },
       updateShopDetails: async (patch) => {
         const nextShop = await api.updateShop(patch);
@@ -301,7 +341,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries({ queryKey: ["products"] });
       },
       addUser: async ({ name, email, password, role }) => {
-        if (role === "admin") throw new Error("Admin cannot be created here.");
+        if (role === "admin" || role === "super_admin") throw new Error("Admin accounts cannot be created here.");
         await api.createUser({ name, email, password, role });
         await queryClient.invalidateQueries({ queryKey: ["users"] });
       },
@@ -400,6 +440,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       purchaseInvoices: creditorsQuery.data?.purchaseInvoices ?? [],
       supplierPayments: creditorsQuery.data?.supplierPayments ?? [],
       bankDeposits: bankDepositsQuery.data ?? [],
+      tenants: tenantsQuery.data ?? [],
       actions,
     }),
     [
@@ -409,6 +450,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       payrollQuery.data,
       creditorsQuery.data,
       bankDepositsQuery.data,
+      tenantsQuery.data,
       productsQuery.data,
       salesQuery.data,
       session,

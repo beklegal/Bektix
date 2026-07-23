@@ -11,12 +11,34 @@ import type {
   Sale,
   SaleLineItem,
   Shop,
+  FeatureAccess,
   ShopPreferences,
   Supplier,
   SupplierPayment,
   User,
 } from "@shared/bektix";
 import { normalizeShopPreferences } from "./preferences.js";
+
+export const defaultFeatureAccess: FeatureAccess = {
+  payroll: true,
+  creditors: true,
+  banking: true,
+  debtors: true,
+  reports: true,
+  users: true,
+};
+
+export function normalizeFeatureAccess(value: unknown): FeatureAccess {
+  const raw = value && typeof value === "object" ? (value as Partial<FeatureAccess>) : {};
+  return {
+    payroll: raw.payroll ?? true,
+    creditors: raw.creditors ?? true,
+    banking: raw.banking ?? true,
+    debtors: raw.debtors ?? true,
+    reports: raw.reports ?? true,
+    users: raw.users ?? true,
+  };
+}
 
 function iso(value: unknown) {
   if (value instanceof Date) return value.toISOString();
@@ -29,6 +51,7 @@ export function serializeShop(row: {
   business_type: string;
   status: string;
   created_at: unknown;
+  features?: unknown;
   preferences: unknown;
 }): Shop {
   return {
@@ -36,6 +59,7 @@ export function serializeShop(row: {
     name: row.name,
     businessType: row.business_type as Shop["businessType"],
     status: row.status as Shop["status"],
+    features: normalizeFeatureAccess(row.features),
     createdAt: iso(row.created_at),
     preferences: normalizeShopPreferences(row.preferences),
   };

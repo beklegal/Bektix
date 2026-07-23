@@ -7,7 +7,7 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
 
   return (
-    <AuthShell title="Forgot password" subtitle="Password reset is managed by the Jilkem owner account.">
+    <AuthShell title="Forgot password" subtitle="Password reset is managed by the BEKTIX owner account.">
       <Button
         type="button"
         variant="ghost"
@@ -21,7 +21,7 @@ export default function ForgotPassword() {
       <div className="rounded-2xl border border-border bg-muted p-5 text-left text-sm text-muted-foreground">
         <p className="font-semibold text-foreground">Password reset isn’t available from this screen yet.</p>
         <p className="mt-1">
-          Please contact Samuel Kissi or an admin user to reset your password or create a replacement account for you.
+          Please contact your BEKTIX super admin or an admin user to reset your password or create a replacement account for you.
         </p>
       </div>
 

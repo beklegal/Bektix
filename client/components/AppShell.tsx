@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   Grid3X3,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBektix } from "@/lib/bektix/context";
@@ -22,7 +23,8 @@ type AppShellSection =
   | "debtors"
   | "apps-services"
   | "users"
-  | "settings";
+  | "settings"
+  | "super-admin";
 
 interface AppShellProps {
   title: string;
@@ -32,6 +34,7 @@ interface AppShellProps {
 }
 
 const navigation = [
+  { label: "Super Admin", path: "/super-admin", key: "super-admin", icon: ShieldCheck },
   { label: "Dashboard", path: "/dashboard", key: "dashboard", icon: Home },
   { label: "Inventory", path: "/inventory", key: "inventory", icon: Package },
   { label: "POS", path: "/sales", key: "sales", icon: ShoppingCart },
@@ -45,14 +48,22 @@ export default function AppShell({ title, description, active, children }: AppSh
   const { user, shop, actions } = useBektix();
 
   const roleLabel =
-    user?.role === "admin"
-      ? "Owner • Admin"
-      : user?.role === "cashier"
-        ? "Staff • Cashier"
-        : "Staff";
+    user?.role === "super_admin"
+      ? "Platform Super Admin"
+      : user?.role === "admin"
+        ? "Tenant Admin"
+        : user?.role === "cashier"
+          ? "Staff Cashier"
+          : "Staff";
 
   const allowedNav = navigation.filter((item) => {
-    if (user?.role === "admin") return true;
+    if (user?.role === "super_admin") return item.key === "super-admin";
+    if (item.key === "super-admin") return false;
+    if (user?.role === "admin") {
+      if (item.key === "users") return Boolean(shop?.features.users);
+      if (item.key === "reports") return Boolean(shop?.features.reports);
+      return true;
+    }
     if (
       item.key === "users" ||
       item.key === "settings" ||
@@ -76,13 +87,13 @@ export default function AppShell({ title, description, active, children }: AppSh
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:h-11 sm:w-11">
                 <img
-                  src="/Jilkem%20Logo.jpeg"
-                  alt="Jilkem Company Limited logo"
+                  src="/BEKTIX%20LOGO.png"
+                  alt="BEKTIX logo"
                   className="h-8 w-8 object-contain sm:h-9 sm:w-9"
                 />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-base font-semibold sm:text-lg">Jilkem</p>
+                <p className="truncate text-base font-semibold sm:text-lg">BEKTIX</p>
                 <p className="text-xs text-primary-foreground/70 truncate max-w-[220px]">
                   {shop?.name ? `${shop.name} - Shop Management` : "Shop Management"}
                 </p>
@@ -171,22 +182,26 @@ export default function AppShell({ title, description, active, children }: AppSh
             {description && <p className="mt-2 text-sm text-muted-foreground max-w-2xl">{description}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-            <Button
-              variant="secondary"
-              className="h-11 px-3 sm:px-5"
-              onClick={() => navigate("/sales")}
-            >
-              <ShoppingCart className="h-4 w-4" />
-              New Sale
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 px-3 sm:px-5"
-              onClick={() => navigate("/inventory?new=1")}
-            >
-              <Package className="h-4 w-4" />
-              Add Product
-            </Button>
+            {user?.role !== "super_admin" && (
+              <>
+                <Button
+                  variant="secondary"
+                  className="h-11 px-3 sm:px-5"
+                  onClick={() => navigate("/sales")}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  New Sale
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 px-3 sm:px-5"
+                  onClick={() => navigate("/inventory?new=1")}
+                >
+                  <Package className="h-4 w-4" />
+                  Add Product
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
