@@ -1,11 +1,12 @@
 import express from "express";
 import { z } from "zod";
-import type { BusinessType, ShopPreferences } from "@shared/bektix";
+import type { Branch, BusinessType, ShopPreferences } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
 import { requireTenant } from "../auth/requireTenant.js";
 import { pool } from "../db/pool.js";
 import { normalizeShopPreferences } from "../domain/preferences.js";
 import { serializeShop } from "../domain/serializers.js";
+import { serializeBranch } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
 
 export const shopRouter = express.Router();
@@ -30,6 +31,15 @@ shopRouter.get("/", async (req, res) => {
   const row = result.rows[0];
   if (!row) return sendApiError(res, 404, "not_found", "Shop not found.");
   res.json(serializeShop(row));
+});
+
+// Branches are provisioned by the platform team, while the tenant admin monitors them here.
+shopRouter.get("/branches", async (req, res) => {
+  const result = await pool.query(
+    "SELECT id, shop_id, name, location, status, created_at FROM branches WHERE shop_id = $1 ORDER BY created_at DESC",
+    [req.auth!.shopId],
+  );
+  res.json(result.rows.map((row) => serializeBranch(row as Parameters<typeof serializeBranch>[0])) satisfies Branch[]);
 });
 
 const updateShopSchema = z
@@ -80,6 +90,7 @@ const updatePreferencesSchema = z
     lowStockThreshold: z.number().int().min(1).optional(),
     taxRatePercent: z.number().min(0).optional(),
     autoPrintReceipt: z.boolean().optional(),
+    receiptFormat: z.enum(["a4", "thermal"]).optional(),
     receiptFooterMessage: z.string().optional(),
   })
   .refine((val) => Object.keys(val).length > 0, { message: "Empty patch." });

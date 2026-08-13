@@ -370,12 +370,55 @@
   margin: 0;
 }
 
-@media print {
-  @page {
-    size: A4 landscape;
-    margin: 0;
-  }
+/* Compact 80 mm thermal receipt. The content remains deliberately simple for
+   reliable printing on common point-of-sale printers. */
+.bektix-receipt--thermal {
+  aspect-ratio: auto;
+  max-width: 80mm;
+  min-height: 0;
+  padding: 4mm;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 
+.bektix-receipt--thermal .bektix-receipt-header,
+.bektix-receipt--thermal .bektix-receipt-body {
+  display: block;
+  min-height: 0;
+  margin-top: 0;
+}
+
+.bektix-receipt--thermal .bektix-receipt-box {
+  border-inline: 0;
+  border-top: 1px dashed #111;
+  padding: 10px 0;
+}
+
+.bektix-receipt--thermal .bektix-receipt-details { display: none; }
+.bektix-receipt--thermal .bektix-receipt-brand { border-top: 0; display: block; text-align: center; }
+.bektix-receipt--thermal .bektix-receipt-brand img { display: none; }
+.bektix-receipt--thermal .bektix-receipt-brand h1 { font-size: 19px; line-height: 1.1; }
+.bektix-receipt--thermal .bektix-receipt-brand p { font-size: 9px; }
+.bektix-receipt--thermal .bektix-receipt-tracking { text-align: center; }
+.bektix-receipt--thermal .bektix-receipt-tracking strong { font-size: 13px; }
+.bektix-receipt--thermal .bektix-receipt-barcode { height: 38px; margin-top: 7px; }
+.bektix-receipt--thermal .bektix-receipt-box h2 { font-size: 10px; }
+.bektix-receipt--thermal .bektix-receipt-table th,
+.bektix-receipt--thermal .bektix-receipt-table td { border-inline: 0; font-size: 10px; padding: 5px 1px; }
+.bektix-receipt--thermal .bektix-receipt-table th:nth-child(1),
+.bektix-receipt--thermal .bektix-receipt-table td:nth-child(1) { width: 44%; }
+.bektix-receipt--thermal .bektix-receipt-table th:nth-child(2),
+.bektix-receipt--thermal .bektix-receipt-table td:nth-child(2),
+.bektix-receipt--thermal .bektix-receipt-table th:nth-child(4),
+.bektix-receipt--thermal .bektix-receipt-table td:nth-child(4) { width: 23%; }
+.bektix-receipt--thermal .bektix-receipt-side { display: block; }
+.bektix-receipt--thermal .bektix-receipt-signature { display: none; }
+.bektix-receipt--thermal .bektix-receipt-summary { margin-top: 0; }
+.bektix-receipt--thermal .bektix-receipt-summary dl div { font-size: 11px; }
+.bektix-receipt--thermal .bektix-receipt-summary dl div:nth-child(2) { font-size: 14px; }
+.bektix-receipt--thermal .bektix-receipt-footer { border-inline: 0; display: block; font-size: 9px; padding: 8px 0; text-align: center; }
+.bektix-receipt--thermal .bektix-receipt-footer span { display: block; margin-top: 4px; }
+
+@media print {
   html,
   body {
     margin: 0 !important;
@@ -388,6 +431,8 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
+  body:has(.bektix-receipt--thermal) { width: 80mm !important; }
 
   .bektix-print-hidden {
     display: none !important;
@@ -527,4 +572,7 @@
     font-size: 16pt !important;
     line-height: 1.25 !important;
   }
+
+  .bektix-receipt-shell--thermal { width: 80mm !important; height: auto !important; }
+  .bektix-receipt--thermal { width: 80mm !important; height: auto !important; min-height: 0 !important; padding: 4mm !important; border: 0 !important; font-size: 10px !important; overflow: visible !important; }
 }

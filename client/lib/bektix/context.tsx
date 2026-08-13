@@ -2,6 +2,7 @@ import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   BankDeposit,
+  Branch,
   Debtor,
   Employee,
   PaymentMethod,
@@ -42,6 +43,7 @@ type BektixContextValue = {
   purchaseInvoices: PurchaseInvoice[];
   supplierPayments: SupplierPayment[];
   bankDeposits: BankDeposit[];
+  branches: Branch[];
   tenants: PlatformTenant[];
   actions: {
     login: (input: { email: string; password: string }) => Promise<AuthResponse>;
@@ -215,6 +217,14 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
     refetchOnWindowFocus: "always",
   });
 
+  const branchesQuery = useQuery({
+    queryKey: ["branches"],
+    queryFn: api.getBranches,
+    enabled: isTenantUser,
+    refetchInterval: LIVE_SYNC_INTERVAL_MS,
+    refetchOnMount: "always",
+  });
+
   const debtorsQuery = useQuery({
     queryKey: ["debtors"],
     queryFn: api.getDebtors,
@@ -278,6 +288,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries({ queryKey: ["products"] });
         await queryClient.invalidateQueries({ queryKey: ["users"] });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });
+        await queryClient.invalidateQueries({ queryKey: ["branches"] });
         await queryClient.invalidateQueries({ queryKey: ["debtors"] });
         await queryClient.invalidateQueries({ queryKey: ["payroll"] });
         await queryClient.invalidateQueries({ queryKey: ["creditors"] });
@@ -291,6 +302,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         queryClient.removeQueries({ queryKey: ["products"] });
         queryClient.removeQueries({ queryKey: ["users"] });
         queryClient.removeQueries({ queryKey: ["sales"] });
+        queryClient.removeQueries({ queryKey: ["branches"] });
         queryClient.removeQueries({ queryKey: ["debtors"] });
         queryClient.removeQueries({ queryKey: ["payroll"] });
         queryClient.removeQueries({ queryKey: ["creditors"] });
@@ -445,6 +457,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       purchaseInvoices: creditorsQuery.data?.purchaseInvoices ?? [],
       supplierPayments: creditorsQuery.data?.supplierPayments ?? [],
       bankDeposits: bankDepositsQuery.data ?? [],
+      branches: branchesQuery.data ?? [],
       tenants: tenantsQuery.data ?? [],
       actions,
     }),
@@ -455,6 +468,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       payrollQuery.data,
       creditorsQuery.data,
       bankDepositsQuery.data,
+      branchesQuery.data,
       tenantsQuery.data,
       productsQuery.data,
       salesQuery.data,

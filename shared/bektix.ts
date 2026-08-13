@@ -27,6 +27,7 @@ export type BankDepositSourceType =
   | "manual";
 
 export type ShopStatus = "active" | "inactive";
+export type ReceiptFormat = "a4" | "thermal";
 
 export interface ShopPreferences {
   currency: string; // e.g. "GH₵", "$", "€"
@@ -36,6 +37,7 @@ export interface ShopPreferences {
   lowStockThreshold: number;
   taxRatePercent: number;
   autoPrintReceipt: boolean;
+  receiptFormat: ReceiptFormat;
   receiptFooterMessage: string;
 }
 

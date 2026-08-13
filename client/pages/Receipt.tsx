@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { useBektix } from "@/lib/bektix/context";
 import { formatMoney } from "@/lib/bektix/format";
 import { api } from "@/lib/bektix/api";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, FileText, ReceiptText } from "lucide-react";
+import type { ReceiptFormat } from "@shared/bektix";
 
 function paymentMethodLabel(method: string) {
   if (method === "cash") return "Cash";
@@ -49,6 +50,7 @@ export default function Receipt() {
   const { saleId } = useParams();
   const [searchParams] = useSearchParams();
   const { shop, user } = useBektix();
+  const [format, setFormat] = useState<ReceiptFormat>(shop?.preferences.receiptFormat ?? "a4");
 
   const saleQuery = useQuery({
     queryKey: ["sale", saleId],
@@ -60,6 +62,8 @@ export default function Receipt() {
   const sale = saleQuery.data ?? null;
   const currency = shop?.preferences.currency || "GH₵";
   const footer = shop?.preferences.receiptFooterMessage || "Thank you for shopping!";
+
+  useEffect(() => setFormat(shop?.preferences.receiptFormat ?? "a4"), [shop?.preferences.receiptFormat]);
 
   useEffect(() => {
     if (!sale) return;
@@ -115,6 +119,7 @@ export default function Receipt() {
 
   return (
     <div className="bektix-receipt-page min-h-screen bg-background p-6">
+      <style media="print">{`@page { size: ${format === "thermal" ? "80mm auto" : "A4 landscape"}; margin: 0; }`}</style>
       <div className="mx-auto max-w-[1180px]">
         <div className="bektix-print-hidden mb-6 flex flex-wrap items-center justify-between gap-3">
           <Button variant="outline" onClick={() => navigate("/sales")} className="h-11">
@@ -122,6 +127,10 @@ export default function Receipt() {
             Back to POS
           </Button>
           <div className="flex gap-3">
+            <div className="flex rounded-md border border-border p-1">
+              <Button variant={format === "a4" ? "secondary" : "ghost"} size="sm" onClick={() => setFormat("a4")}><FileText className="mr-1 h-4 w-4" />A4</Button>
+              <Button variant={format === "thermal" ? "secondary" : "ghost"} size="sm" onClick={() => setFormat("thermal")}><ReceiptText className="mr-1 h-4 w-4" />Small</Button>
+            </div>
             <Button variant="outline" onClick={() => window.print()} className="h-11">
               <Printer className="mr-2 h-4 w-4" />
               Print
@@ -135,8 +144,8 @@ export default function Receipt() {
           </div>
         </div>
 
-        <div className="bektix-receipt-shell flex justify-center">
-          <article className="bektix-receipt">
+        <div className={`bektix-receipt-shell bektix-receipt-shell--${format} flex justify-center`}>
+          <article className={`bektix-receipt bektix-receipt--${format}`}>
             <header className="bektix-receipt-header">
               <section className="bektix-receipt-box bektix-receipt-details">
                 <h2>Sale Receipt</h2>

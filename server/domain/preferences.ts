@@ -9,6 +9,7 @@ export function defaultShopPreferences(currency = "GH₵"): ShopPreferences {
     lowStockThreshold: 10,
     taxRatePercent: 5,
     autoPrintReceipt: false,
+    receiptFormat: "a4",
     receiptFooterMessage: "Thank you for shopping with us!",
   };
 }

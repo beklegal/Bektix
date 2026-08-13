@@ -79,6 +79,7 @@ export const api = {
     apiRequest<Shop>(`/api/platform/tenants/${shopId}/features`, { method: "PATCH", json: patch }),
 
   getShop: () => apiRequest<Shop>("/api/shop"),
+  getBranches: () => apiRequest<Branch[]>("/api/shop/branches"),
   updateShop: (patch: { name?: string; businessType?: Shop["businessType"] }) =>
     apiRequest<Shop>("/api/shop", { method: "PATCH", json: patch }),
   updateShopPreferences: (patch: Partial<ShopPreferences>) =>

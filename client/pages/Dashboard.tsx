@@ -9,6 +9,8 @@ import {
   Plus,
   TrendingUp,
   Settings,
+  GitBranch,
+  MapPin,
 } from "lucide-react";
 import { useBektix } from "@/lib/bektix/context";
 import { formatCompact, formatMoney } from "@/lib/bektix/format";
@@ -16,7 +18,7 @@ import { isSameDay, subDays } from "date-fns";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, shop, sales, products } = useBektix();
+  const { user, shop, sales, products, branches } = useBektix();
   const isAdmin = user?.role === "admin";
   const currency = shop?.preferences.currency || "GH₵";
 
@@ -255,6 +257,28 @@ export default function Dashboard() {
             </div>
           </Card>
         </div>
+
+        {isAdmin && (
+          <Card className="mt-6 border border-border">
+            <div className="flex flex-col gap-3 border-b border-border p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="flex items-center gap-2 text-lg font-semibold"><GitBranch className="h-5 w-5 text-accent" />Business branches</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Branches created by BEKTIX are available here for your operational oversight.</p>
+              </div>
+              <span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-semibold text-accent">{branches.length} {branches.length === 1 ? "branch" : "branches"}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+              {branches.map((branch) => (
+                <div key={branch.id} className="rounded-xl border border-border bg-muted/30 p-4">
+                  <div className="flex items-start justify-between gap-3"><p className="font-semibold">{branch.name}</p><span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-medium capitalize text-emerald-700">{branch.status}</span></div>
+                  <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{branch.location || "Location not set"}</p>
+                  <p className="mt-3 text-xs text-muted-foreground">Added {new Date(branch.createdAt).toLocaleDateString()}</p>
+                </div>
+              ))}
+              {branches.length === 0 && <div className="col-span-full rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No branches have been assigned to this business yet.</div>}
+            </div>
+          </Card>
+        )}
       </AppShell>
   );
 }

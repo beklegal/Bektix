@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BusinessType } from "@shared/bektix";
+import type { BusinessType, ReceiptFormat } from "@shared/bektix";
 import AppShell from "@/components/AppShell";
 import { useBektix } from "@/lib/bektix/context";
 import { toast } from "@/components/ui/use-toast";
@@ -26,6 +26,7 @@ type SettingsForm = {
   enableProductVariants: boolean;
   enableLowStockAlerts: boolean;
   autoPrintReceipt: boolean;
+  receiptFormat: ReceiptFormat;
   lowStockThreshold: string;
   taxRatePercent: string;
   receiptFooterMessage: string;
@@ -47,6 +48,7 @@ export default function Settings() {
       enableProductVariants: shop?.preferences.enableProductVariants ?? true,
       enableLowStockAlerts: shop?.preferences.enableLowStockAlerts ?? true,
       autoPrintReceipt: shop?.preferences.autoPrintReceipt ?? false,
+      receiptFormat: shop?.preferences.receiptFormat ?? "a4",
       lowStockThreshold: String(shop?.preferences.lowStockThreshold ?? 10),
       taxRatePercent: String(shop?.preferences.taxRatePercent ?? 5),
       receiptFooterMessage: shop?.preferences.receiptFooterMessage || "Thank you for shopping with us!",
@@ -102,6 +104,7 @@ export default function Settings() {
         lowStockThreshold,
         taxRatePercent,
         autoPrintReceipt: form.autoPrintReceipt,
+        receiptFormat: form.receiptFormat,
         receiptFooterMessage: form.receiptFooterMessage.trim() || "Thank you for shopping with us!",
       });
       toast({ title: "Settings saved" });
@@ -292,6 +295,19 @@ export default function Settings() {
               rows={3}
             />
           </div>
+        </div>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <p className="text-lg font-semibold">Receipt printing</p>
+        <p className="mt-1 text-sm text-muted-foreground">Choose the default layout for every printed sales receipt.</p>
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {(["a4", "thermal"] as const).map((format) => (
+            <label key={format} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${form.receiptFormat === format ? "border-accent bg-accent/5" : "border-border"}`}>
+              <input type="radio" name="receiptFormat" value={format} checked={form.receiptFormat === format} onChange={() => setForm({ ...form, receiptFormat: format })} className="mt-1" />
+              <span><span className="block font-medium">{format === "a4" ? "A4 landscape" : "Small thermal"}</span><span className="mt-1 block text-sm text-muted-foreground">{format === "a4" ? "Detailed full-page receipt" : "Compact 80 mm receipt for thermal printers"}</span></span>
+            </label>
+          ))}
         </div>
       </Card>
 
