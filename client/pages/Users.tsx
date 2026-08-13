@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useBektix } from "@/lib/bektix/context";
 import { toast } from "@/components/ui/use-toast";
@@ -30,6 +31,8 @@ type NewUserDraft = {
   email: string;
   password: string;
   role: UserRole;
+  branchId: string;
+  permissions: User["permissions"];
 };
 
 const emptyDraft: NewUserDraft = {
@@ -37,6 +40,8 @@ const emptyDraft: NewUserDraft = {
   email: "",
   password: "",
   role: "cashier",
+  branchId: "",
+  permissions: { manage_inventory: false, collect_payments: false },
 };
 
 function roleBadge(role: UserRole) {
@@ -54,18 +59,21 @@ function statusBadge(status: User["status"]) {
 }
 
 export default function Users() {
-  const { user, users, actions } = useBektix();
+  const { user, users, branches, actions } = useBektix();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [draft, setDraft] = useState<NewUserDraft>(emptyDraft);
+  const [searchParams] = useSearchParams();
+  const selectedBranchId = searchParams.get("branch");
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filtered = useMemo(() => {
-    if (!normalizedSearch) return users;
-    return users.filter(
+    const branchFiltered = selectedBranchId ? users.filter((u) => u.branchId === selectedBranchId) : users;
+    if (!normalizedSearch) return branchFiltered;
+    return branchFiltered.filter(
       (u) => u.name.toLowerCase().includes(normalizedSearch) || u.email.toLowerCase().includes(normalizedSearch),
     );
-  }, [normalizedSearch, users]);
+  }, [normalizedSearch, selectedBranchId, users]);
 
   const openAdd = () => {
     setDraft(emptyDraft);
@@ -96,7 +104,7 @@ export default function Users() {
     }
 
     try {
-      await actions.addUser({ name, email, password, role: draft.role });
+      await actions.addUser({ name, email, password, role: draft.role, branchId: draft.branchId || undefined, permissions: draft.permissions });
       toast({ title: "User added" });
       closeDialog();
     } catch (err) {
@@ -148,6 +156,7 @@ export default function Users() {
 
   return (
     <AppShell title="Users" description="Invite staff and manage permissions." active="users">
+      {selectedBranchId && <Card className="mb-5 border-accent/30 bg-accent/5 p-4 text-sm"><span className="font-semibold">Branch team view:</span> {branches.find((branch) => branch.id === selectedBranchId)?.name || "Selected branch"}. This lists the team granted access for this branch.</Card>}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-md">
           <UserIcon className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
@@ -163,7 +172,7 @@ export default function Users() {
           className="h-11 w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold sm:w-auto"
         >
           <Plus className="h-5 w-5 mr-2" />
-          Add User
+          Grant system access
         </Button>
       </div>
 
@@ -316,14 +325,19 @@ export default function Users() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add user</DialogTitle>
-            <DialogDescription>Invite a staff member to BEKTIX.</DialogDescription>
+            <DialogTitle>Grant system access</DialogTitle>
+            <DialogDescription>Create a sign-in for a cashier or staff member and optionally assign their branch.</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4">
             <div className="grid gap-2">
               <label className="text-sm font-medium">Full name</label>
               <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+            </div>
+            <div className="grid gap-2 rounded-lg border border-border p-3">
+              <label className="text-sm font-medium">System permissions</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.permissions.manage_inventory} onChange={(e) => setDraft({ ...draft, permissions: { ...draft.permissions, manage_inventory: e.target.checked } })} />Add and manage products / inventory</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.permissions.collect_payments} onChange={(e) => setDraft({ ...draft, permissions: { ...draft.permissions, collect_payments: e.target.checked } })} />Collect money through POS</label>
             </div>
             <div className="grid gap-2">
               <label className="text-sm font-medium">Email</label>
@@ -347,6 +361,13 @@ export default function Users() {
               >
                 <option value="cashier">Cashier</option>
                 <option value="staff">Staff</option>
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Assigned branch (optional)</label>
+              <select value={draft.branchId} onChange={(e) => setDraft({ ...draft, branchId: e.target.value })} className="h-11 rounded-md border border-border bg-background px-3 text-sm">
+                <option value="">Business-wide / unassigned</option>
+                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}{branch.location ? ` — ${branch.location}` : ""}</option>)}
               </select>
             </div>
           </div>

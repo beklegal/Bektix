@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useBektix } from "@/lib/bektix/context";
 import type { BusinessType, TenantFeature } from "@shared/bektix";
-import { Building2, GitBranch, MapPin, Plus, ShieldCheck, Users, Search, CircleCheck } from "lucide-react";
+import type { PlatformTenant } from "@shared/api";
+import { Building2, GitBranch, MapPin, Plus, ShieldCheck, Users, Search, CircleCheck, CreditCard, Trash2 } from "lucide-react";
 
 const featureOptions: Array<{ key: TenantFeature; label: string }> = [
   { key: "payroll", label: "Payroll" },
@@ -39,6 +40,8 @@ export default function SuperAdmin() {
   });
   const [branchDraft, setBranchDraft] = useState({ name: "", location: "" });
   const [search, setSearch] = useState("");
+  const [subscriptionTenant, setSubscriptionTenant] = useState<PlatformTenant | null>(null);
+  const [subscriptionSaving, setSubscriptionSaving] = useState(false);
 
   const stats = useMemo(
     () => ({
@@ -104,6 +107,16 @@ export default function SuperAdmin() {
       toast({ title: "Could not update feature", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" });
     }
   };
+  const saveSubscription = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); if (!subscriptionTenant) return;
+    const form = new FormData(event.currentTarget);
+    setSubscriptionSaving(true);
+    try { await actions.updateTenantSubscription(subscriptionTenant.shop.id, { status: String(form.get("status")) as PlatformTenant["subscription"]["status"], plan: String(form.get("plan")), renewalDate: String(form.get("renewalDate")) || undefined, reminderDays: Number(form.get("reminderDays")) }); setSubscriptionTenant(null); toast({ title: "Subscription updated" }); } catch (err) { toast({ title: "Could not update subscription", description: err instanceof Error ? err.message : "Try again.", variant: "destructive" }); } finally { setSubscriptionSaving(false); }
+  };
+  const deleteTenant = async (tenant: PlatformTenant) => {
+    if (window.prompt(`Type ${tenant.shop.name} to permanently delete this business and all of its data.`) !== tenant.shop.name) return;
+    try { await actions.deleteTenant(tenant.shop.id); toast({ title: "Business account deleted" }); } catch (err) { toast({ title: "Could not delete account", description: err instanceof Error ? err.message : "Try again.", variant: "destructive" }); }
+  };
 
   return (
     <AppShell title="Super Admin" description="Manage BEKTIX tenants, branches, tenant admins, and module access." active="super-admin">
@@ -156,6 +169,7 @@ export default function SuperAdmin() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => setSubscriptionTenant(tenant)}><CreditCard className="h-4 w-4" />Subscription</Button>
                 <Button variant="outline" className="gap-2" onClick={() => setBranchTenantId(tenant.shop.id)}>
                   <GitBranch className="h-4 w-4" />
                   Add branch
@@ -163,8 +177,10 @@ export default function SuperAdmin() {
                 <Button variant="outline" onClick={() => actions.updateTenantStatus(tenant.shop.id, tenant.shop.status === "active" ? "inactive" : "active")}>
                   {tenant.shop.status === "active" ? "Deactivate" : "Activate"}
                 </Button>
+                <Button variant="outline" size="icon" className="text-destructive hover:text-destructive" onClick={() => deleteTenant(tenant)} title="Delete business account"><Trash2 className="h-4 w-4" /></Button>
               </div>
             </div>
+            <div className={`mt-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm ${tenant.subscription.status === "expired" || tenant.subscription.status === "past_due" ? "border-destructive/30 bg-destructive/5" : "border-border bg-muted/30"}`}><CreditCard className="h-4 w-4" /><span className="font-medium">{tenant.subscription.plan}</span><Badge variant="outline" className="capitalize">{tenant.subscription.status.replace("_", " ")}</Badge><span className="text-muted-foreground">{tenant.subscription.renewalDate ? `Renews ${new Date(tenant.subscription.renewalDate).toLocaleDateString()} · reminder ${tenant.subscription.reminderDays} days before` : "No renewal date set"}</span></div>
             {tenant.branches.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {tenant.branches.map((branch) => (
@@ -195,6 +211,7 @@ export default function SuperAdmin() {
             </form>
           </DialogContent>
         </Dialog>
+        <Dialog open={Boolean(subscriptionTenant)} onOpenChange={(open) => !open && setSubscriptionTenant(null)}><DialogContent><DialogHeader><DialogTitle>Manage subscription</DialogTitle></DialogHeader>{subscriptionTenant && <form onSubmit={saveSubscription} className="space-y-4"><p className="text-sm text-muted-foreground">{subscriptionTenant.shop.name}</p><Input name="plan" defaultValue={subscriptionTenant.subscription.plan} placeholder="Plan name" required /><select name="status" defaultValue={subscriptionTenant.subscription.status} className="h-11 w-full rounded-md border bg-background px-3 text-sm"><option value="trial">Trial</option><option value="active">Active</option><option value="past_due">Past due</option><option value="expired">Expired</option></select><div><label className="text-sm font-medium">Renewal date</label><Input className="mt-2" name="renewalDate" type="date" defaultValue={subscriptionTenant.subscription.renewalDate} /></div><div><label className="text-sm font-medium">Send reminder (days before)</label><Input className="mt-2" name="reminderDays" type="number" min="0" max="90" defaultValue={subscriptionTenant.subscription.reminderDays} /></div><Button className="w-full" disabled={subscriptionSaving}>{subscriptionSaving ? "Saving..." : "Save subscription"}</Button></form>}</DialogContent></Dialog>
         {!tenants.length && (
           <Card className="p-8 text-center text-sm text-muted-foreground">
             <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-accent" />

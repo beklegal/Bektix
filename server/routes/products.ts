@@ -3,6 +3,7 @@ import express from "express";
 import { z } from "zod";
 import { requireUser } from "../auth/requireUser.js";
 import { requireTenant } from "../auth/requireTenant.js";
+import { requirePermission } from "../auth/requirePermission.js";
 import { pool } from "../db/pool.js";
 import { serializeProduct } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
@@ -40,7 +41,7 @@ productsRouter.get("/", async (req, res) => {
   res.json(result.rows.map(serializeProduct));
 });
 
-productsRouter.post("/", async (req, res) => {
+productsRouter.post("/", requirePermission("manage_inventory"), async (req, res) => {
   const { shopId } = req.auth!;
 
   const parsed = createProductSchema.safeParse(req.body);
@@ -91,7 +92,7 @@ const patchProductSchema = z
   })
   .refine((val) => Object.keys(val).length > 0, { message: "Empty patch." });
 
-productsRouter.patch("/:productId", async (req, res) => {
+productsRouter.patch("/:productId", requirePermission("manage_inventory"), async (req, res) => {
   const { shopId } = req.auth!;
 
   const parsed = patchProductSchema.safeParse(req.body);
@@ -135,7 +136,7 @@ productsRouter.patch("/:productId", async (req, res) => {
   res.json(serializeProduct(result.rows[0]));
 });
 
-productsRouter.delete("/:productId", async (req, res) => {
+productsRouter.delete("/:productId", requirePermission("manage_inventory"), async (req, res) => {
   const { shopId } = req.auth!;
 
   const { productId } = req.params;

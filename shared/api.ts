@@ -14,6 +14,7 @@ import type {
   Supplier,
   SupplierPayment,
   User,
+  UserPermissions,
 } from "./bektix";
 
 export type ApiErrorCode =
@@ -53,6 +54,7 @@ export interface PlatformTenant {
   userCount: number;
   branches: Branch[];
   branchCount: number;
+  subscription: { status: "trial" | "active" | "past_due" | "expired"; plan: string; renewalDate?: string; reminderDays: number };
 }
 
 export interface CreateTenantRequest {
@@ -66,6 +68,7 @@ export interface CreateTenantRequest {
 
 export type UpdateTenantFeaturesRequest = Partial<Shop["features"]>;
 export type UpdateTenantStatusRequest = Pick<Shop, "status">;
+export interface UpdateTenantSubscriptionRequest { status: "trial" | "active" | "past_due" | "expired"; plan: string; renewalDate?: string; reminderDays: number; }
 
 export interface CreateBranchRequest {
   name: string;
@@ -93,6 +96,8 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   role: Exclude<User["role"], "admin" | "super_admin">;
+  branchId?: string;
+  permissions?: Partial<UserPermissions>;
 }
 
 export interface CreateSaleRequest {

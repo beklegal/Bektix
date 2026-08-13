@@ -46,6 +46,7 @@ const createBranchSchema = z.object({
   name: z.string().min(1),
   location: z.string().optional(),
 });
+const subscriptionSchema = z.object({ status: z.enum(["trial", "active", "past_due", "expired"]), plan: z.string().min(1), renewalDate: z.string().date().optional(), reminderDays: z.number().int().min(0).max(90) });
 
 platformRouter.get("/tenants", async (_req, res) => {
   const result = await pool.query(
@@ -58,6 +59,7 @@ platformRouter.get("/tenants", async (_req, res) => {
         s.created_at,
         s.features,
         s.preferences,
+        s.subscription,
         COUNT(u.id)::int AS user_count,
         COALESCE(
           (
@@ -107,8 +109,23 @@ platformRouter.get("/tenants", async (_req, res) => {
       userCount: Number(row.user_count),
       branches: (row.branches ?? []).map(serializeBranch),
       branchCount: Number(row.branches?.length ?? 0),
+      subscription: { status: row.subscription?.status ?? "trial", plan: row.subscription?.plan ?? "Starter", renewalDate: row.subscription?.renewalDate, reminderDays: Number(row.subscription?.reminderDays ?? 7) },
     })),
   );
+});
+
+platformRouter.patch("/tenants/:shopId/subscription", async (req, res) => {
+  const parsed = subscriptionSchema.safeParse(req.body);
+  if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid subscription details.");
+  const result = await pool.query("UPDATE shops SET subscription = $1 WHERE id = $2 AND id <> '00000000-0000-4000-8000-000000000000' RETURNING id", [parsed.data, req.params.shopId]);
+  if (!result.rowCount) return sendApiError(res, 404, "not_found", "Tenant not found.");
+  res.status(204).end();
+});
+
+platformRouter.delete("/tenants/:shopId", async (req, res) => {
+  const result = await pool.query("DELETE FROM shops WHERE id = $1 AND id <> '00000000-0000-4000-8000-000000000000' RETURNING id", [req.params.shopId]);
+  if (!result.rowCount) return sendApiError(res, 404, "not_found", "Tenant not found.");
+  res.status(204).end();
 });
 
 platformRouter.post("/tenants", async (req, res) => {

@@ -74,6 +74,8 @@ export function serializeUser(row: {
   role: string;
   status: string;
   created_at: unknown;
+  branch_id?: string | null;
+  permissions?: unknown;
 }): User {
   return {
     id: row.id,
@@ -83,7 +85,14 @@ export function serializeUser(row: {
     role: row.role as User["role"],
     status: row.status as User["status"],
     createdAt: iso(row.created_at),
+    branchId: row.branch_id ?? undefined,
+    permissions: normalizeUserPermissions(row.permissions),
   };
+}
+
+export function normalizeUserPermissions(value: unknown): User["permissions"] {
+  const raw = value && typeof value === "object" ? value as Partial<User["permissions"]> : {};
+  return { manage_inventory: raw.manage_inventory ?? false, collect_payments: raw.collect_payments ?? false };
 }
 
 export function serializeBranch(row: {

@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { PaymentMethod, PayerType } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
 import { requireTenant } from "../auth/requireTenant.js";
+import { requirePermission } from "../auth/requirePermission.js";
 import { pool } from "../db/pool.js";
 import { serializeSale, serializeSaleLineItem } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
@@ -111,7 +112,7 @@ const createSaleSchema = z.object({
   amountPaid: z.number().min(0),
 });
 
-salesRouter.post("/", async (req, res) => {
+salesRouter.post("/", requirePermission("collect_payments"), async (req, res) => {
   const { userId, shopId } = req.auth!;
 
   const parsed = createSaleSchema.safeParse(req.body);

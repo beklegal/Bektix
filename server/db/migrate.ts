@@ -28,6 +28,7 @@ export async function migrate() {
       ALTER TABLE shops
       ADD COLUMN IF NOT EXISTS features jsonb NOT NULL DEFAULT '{}'::jsonb;
     `);
+    await client.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS subscription jsonb NOT NULL DEFAULT '{"status":"trial","plan":"Starter","reminderDays":7}'::jsonb;`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -73,6 +74,8 @@ export async function migrate() {
       CREATE INDEX IF NOT EXISTS branches_shop_id_idx
       ON branches(shop_id, created_at DESC);
     `);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_id uuid NULL REFERENCES branches(id) ON DELETE SET NULL;`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions jsonb NOT NULL DEFAULT '{"manage_inventory":false,"collect_payments":false}'::jsonb;`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS products (

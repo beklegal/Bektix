@@ -269,11 +269,12 @@ export default function Dashboard() {
             </div>
             <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
               {branches.map((branch) => (
-                <div key={branch.id} className="rounded-xl border border-border bg-muted/30 p-4">
+                <button key={branch.id} onClick={() => navigate(`/users?branch=${branch.id}`)} className="rounded-xl border border-border bg-muted/30 p-4 text-left transition-colors hover:border-accent hover:bg-accent/5">
                   <div className="flex items-start justify-between gap-3"><p className="font-semibold">{branch.name}</p><span className="rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-medium capitalize text-emerald-700">{branch.status}</span></div>
                   <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" />{branch.location || "Location not set"}</p>
                   <p className="mt-3 text-xs text-muted-foreground">Added {new Date(branch.createdAt).toLocaleDateString()}</p>
-                </div>
+                  <p className="mt-3 text-xs font-medium text-accent">View branch team & access →</p>
+                </button>
               ))}
               {branches.length === 0 && <div className="col-span-full rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No branches have been assigned to this business yet.</div>}
             </div>

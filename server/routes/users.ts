@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import express from "express";
 import { z } from "zod";
-import type { UserRole, UserStatus } from "@shared/bektix";
+import type { UserRole, UserStatus, UserPermissions } from "@shared/bektix";
 import { requireUser } from "../auth/requireUser.js";
 import { requireFeature } from "../auth/requireFeature.js";
 import { hashPassword } from "../auth/password.js";
@@ -26,7 +26,7 @@ usersRouter.get("/", async (req, res) => {
 
   const result = await pool.query(
     `
-      SELECT id, shop_id, name, email, role, status, created_at
+      SELECT id, shop_id, name, email, role, status, created_at, branch_id, permissions
       FROM users
       WHERE shop_id = $1
       ORDER BY created_at DESC
@@ -42,6 +42,8 @@ const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   role: z.enum(["cashier", "staff"]),
+  branchId: z.string().uuid().optional(),
+  permissions: z.object({ manage_inventory: z.boolean().optional(), collect_payments: z.boolean().optional() }).optional(),
 });
 
 usersRouter.post("/", async (req, res) => {
@@ -59,15 +61,19 @@ usersRouter.post("/", async (req, res) => {
   if (existing.rowCount) {
     return sendApiError(res, 409, "conflict", "A user with this email already exists.");
   }
+  if (parsed.data.branchId) {
+    const branch = await pool.query("SELECT id FROM branches WHERE id = $1 AND shop_id = $2 LIMIT 1", [parsed.data.branchId, shopId]);
+    if (!branch.rowCount) return sendApiError(res, 400, "bad_request", "Selected branch does not belong to this business.");
+  }
 
   const id = crypto.randomUUID();
   const passwordHash = await hashPassword(parsed.data.password);
 
   const result = await pool.query(
     `
-      INSERT INTO users (id, shop_id, name, email, email_lower, role, status, password_hash)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, shop_id, name, email, role, status, created_at
+      INSERT INTO users (id, shop_id, name, email, email_lower, role, status, password_hash, branch_id, permissions)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id, shop_id, name, email, role, status, created_at, branch_id, permissions
     `,
     [
       id,
@@ -78,6 +84,8 @@ usersRouter.post("/", async (req, res) => {
       parsed.data.role satisfies UserRole,
       "active" satisfies UserStatus,
       passwordHash,
+      parsed.data.branchId ?? null,
+      { manage_inventory: parsed.data.permissions?.manage_inventory ?? false, collect_payments: parsed.data.permissions?.collect_payments ?? false } satisfies UserPermissions,
     ],
   );
 

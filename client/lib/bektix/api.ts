@@ -26,6 +26,7 @@ import type {
   UpdateSupplierRequest,
   UpdateTenantFeaturesRequest,
   UpdateTenantStatusRequest,
+  UpdateTenantSubscriptionRequest,
 } from "@shared/api";
 import type { BankDeposit, Debtor, Product, Sale, Shop, ShopPreferences, User } from "@shared/bektix";
 import type { Branch } from "@shared/bektix";
@@ -77,6 +78,8 @@ export const api = {
     apiRequest<Shop>(`/api/platform/tenants/${shopId}/status`, { method: "PATCH", json: patch }),
   updateTenantFeatures: (shopId: string, patch: UpdateTenantFeaturesRequest) =>
     apiRequest<Shop>(`/api/platform/tenants/${shopId}/features`, { method: "PATCH", json: patch }),
+  updateTenantSubscription: (shopId: string, patch: UpdateTenantSubscriptionRequest) => apiRequest<void>(`/api/platform/tenants/${shopId}/subscription`, { method: "PATCH", json: patch }),
+  deleteTenant: (shopId: string) => apiRequest<void>(`/api/platform/tenants/${shopId}`, { method: "DELETE" }),
 
   getShop: () => apiRequest<Shop>("/api/shop"),
   getBranches: () => apiRequest<Branch[]>("/api/shop/branches"),

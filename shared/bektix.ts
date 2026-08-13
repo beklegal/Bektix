@@ -28,6 +28,8 @@ export type BankDepositSourceType =
 
 export type ShopStatus = "active" | "inactive";
 export type ReceiptFormat = "a4" | "thermal";
+export type UserPermission = "manage_inventory" | "collect_payments";
+export type UserPermissions = Record<UserPermission, boolean>;
 
 export interface ShopPreferences {
   currency: string; // e.g. "GH₵", "$", "€"
@@ -69,6 +71,8 @@ export interface User {
   status: UserStatus;
   password?: string; // write-only input (never returned by the API)
   createdAt: string; // ISO
+  branchId?: string;
+  permissions: UserPermissions;
 }
 
 export interface Product {

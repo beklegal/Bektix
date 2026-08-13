@@ -22,6 +22,7 @@ import type {
   UserRole,
 } from "@shared/bektix";
 import type { AuthResponse, PlatformTenant } from "@shared/api";
+import type { UpdateTenantSubscriptionRequest } from "@shared/api";
 import type { BusinessType, Shop } from "@shared/bektix";
 import { api } from "@/lib/bektix/api";
 
@@ -58,6 +59,8 @@ type BektixContextValue = {
     }) => Promise<void>;
     updateTenantStatus: (shopId: string, status: Shop["status"]) => Promise<void>;
     updateTenantFeatures: (shopId: string, features: Partial<Record<TenantFeature, boolean>>) => Promise<void>;
+    updateTenantSubscription: (shopId: string, patch: UpdateTenantSubscriptionRequest) => Promise<void>;
+    deleteTenant: (shopId: string) => Promise<void>;
     createBranch: (shopId: string, input: { name: string; location?: string }) => Promise<void>;
     updateShopDetails: (patch: { name?: string; businessType?: BusinessType }) => Promise<void>;
     updateShopPreferences: (patch: Partial<ShopPreferences>) => Promise<void>;
@@ -73,6 +76,8 @@ type BektixContextValue = {
       email: string;
       password: string;
       role: UserRole;
+      branchId?: string;
+      permissions?: Partial<User["permissions"]>;
     }) => Promise<void>;
     toggleUserStatus: (userId: string) => Promise<void>;
     deleteUser: (userId: string) => Promise<void>;
@@ -321,6 +326,8 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await api.updateTenantFeatures(shopId, features);
         await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
       },
+      updateTenantSubscription: async (shopId, patch) => { await api.updateTenantSubscription(shopId, patch); await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] }); },
+      deleteTenant: async (shopId) => { await api.deleteTenant(shopId); await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] }); },
       createBranch: async (shopId, input) => {
         await api.createBranch(shopId, input);
         await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
@@ -357,9 +364,9 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await api.deleteProduct(productId);
         await queryClient.invalidateQueries({ queryKey: ["products"] });
       },
-      addUser: async ({ name, email, password, role }) => {
+      addUser: async ({ name, email, password, role, branchId, permissions }) => {
         if (role === "admin" || role === "super_admin") throw new Error("Admin accounts cannot be created here.");
-        await api.createUser({ name, email, password, role });
+        await api.createUser({ name, email, password, role, branchId, permissions });
         await queryClient.invalidateQueries({ queryKey: ["users"] });
       },
       toggleUserStatus: async (userId) => {
