@@ -80,6 +80,7 @@ export const api = {
     apiRequest<Shop>(`/api/platform/tenants/${shopId}/features`, { method: "PATCH", json: patch }),
   updateTenantSubscription: (shopId: string, patch: UpdateTenantSubscriptionRequest) => apiRequest<void>(`/api/platform/tenants/${shopId}/subscription`, { method: "PATCH", json: patch }),
   deleteTenant: (shopId: string) => apiRequest<void>(`/api/platform/tenants/${shopId}`, { method: "DELETE" }),
+  resetTenantAdminPassword: (shopId: string, password: string) => apiRequest<void>(`/api/platform/tenants/${shopId}/admin/reset-password`, { method: "POST", json: { password } }),
 
   getShop: () => apiRequest<Shop>("/api/shop"),
   getBranches: () => apiRequest<Branch[]>("/api/shop/branches"),
@@ -103,6 +104,8 @@ export const api = {
   toggleUserStatus: (userId: string) =>
     apiRequest<User>(`/api/users/${userId}/toggle-status`, { method: "POST" }),
   deleteUser: (userId: string) => apiRequest<void>(`/api/users/${userId}`, { method: "DELETE" }),
+  resetUserPassword: (userId: string, password: string) => apiRequest<void>(`/api/users/${userId}/reset-password`, { method: "POST", json: { password } }),
+  updateUserAccess: (userId: string, patch: { permissions: Partial<User["permissions"]>; branchId?: string | null }) => apiRequest<User>(`/api/users/${userId}/access`, { method: "PATCH", json: patch }),
 
   getSales: () => apiRequest<Sale[]>("/api/sales"),
   createSale: (input: CreateSaleRequest) =>

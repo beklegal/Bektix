@@ -22,16 +22,16 @@ function requireAdmin(req: express.Request, res: express.Response) {
 }
 
 usersRouter.get("/", async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId } = req.auth!;
 
   const result = await pool.query(
     `
       SELECT id, shop_id, name, email, role, status, created_at, branch_id, permissions
       FROM users
-      WHERE shop_id = $1
+      WHERE shop_id = $1 AND ($2::uuid IS NULL OR branch_id IS NOT DISTINCT FROM $2::uuid)
       ORDER BY created_at DESC
     `,
-    [shopId],
+    [shopId, branchId],
   );
 
   res.json(result.rows.map(serializeUser));
@@ -41,17 +41,19 @@ const createUserSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(["cashier", "staff"]),
+  role: z.enum(["admin", "cashier", "staff"]),
   branchId: z.string().uuid().optional(),
   permissions: z.object({ manage_inventory: z.boolean().optional(), collect_payments: z.boolean().optional() }).optional(),
 });
 
 usersRouter.post("/", async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId: assignedBranchId } = req.auth!;
   if (!requireAdmin(req, res)) return;
 
   const parsed = createUserSchema.safeParse(req.body);
   if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid user.");
+  if (assignedBranchId && parsed.data.role === "admin") return sendApiError(res, 403, "forbidden", "Branch admins cannot create another branch admin.");
+  if (parsed.data.role === "admin" && !parsed.data.branchId) return sendApiError(res, 400, "bad_request", "A branch must be assigned to a branch admin.");
 
   const emailLower = parsed.data.email.trim().toLowerCase();
   const existing = await pool.query<{ id: string }>(
@@ -61,8 +63,9 @@ usersRouter.post("/", async (req, res) => {
   if (existing.rowCount) {
     return sendApiError(res, 409, "conflict", "A user with this email already exists.");
   }
-  if (parsed.data.branchId) {
-    const branch = await pool.query("SELECT id FROM branches WHERE id = $1 AND shop_id = $2 LIMIT 1", [parsed.data.branchId, shopId]);
+  const effectiveBranchId = assignedBranchId ?? parsed.data.branchId ?? null;
+  if (effectiveBranchId) {
+    const branch = await pool.query("SELECT id FROM branches WHERE id = $1 AND shop_id = $2 AND status = 'active' LIMIT 1", [effectiveBranchId, shopId]);
     if (!branch.rowCount) return sendApiError(res, 400, "bad_request", "Selected branch does not belong to this business.");
   }
 
@@ -84,16 +87,58 @@ usersRouter.post("/", async (req, res) => {
       parsed.data.role satisfies UserRole,
       "active" satisfies UserStatus,
       passwordHash,
-      parsed.data.branchId ?? null,
-      { manage_inventory: parsed.data.permissions?.manage_inventory ?? false, collect_payments: parsed.data.permissions?.collect_payments ?? false } satisfies UserPermissions,
+      effectiveBranchId,
+      { manage_inventory: parsed.data.role === "admin" ? true : (parsed.data.permissions?.manage_inventory ?? false), collect_payments: parsed.data.role === "admin" ? true : (parsed.data.permissions?.collect_payments ?? false) } satisfies UserPermissions,
     ],
   );
 
   res.status(201).json(serializeUser(result.rows[0]));
 });
 
+const updateAccessSchema = z.object({
+  permissions: z.object({ manage_inventory: z.boolean().optional(), collect_payments: z.boolean().optional() }),
+  branchId: z.string().uuid().nullable().optional(),
+});
+
+usersRouter.patch("/:userId/access", async (req, res) => {
+  const { shopId, branchId: assignedBranchId } = req.auth!;
+  if (!requireAdmin(req, res)) return;
+  const parsed = updateAccessSchema.safeParse(req.body);
+  if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid access settings.");
+
+  const target = await pool.query("SELECT id, role, branch_id, permissions FROM users WHERE id = $1 AND shop_id = $2 AND ($3::uuid IS NULL OR branch_id IS NOT DISTINCT FROM $3::uuid) LIMIT 1", [req.params.userId, shopId, assignedBranchId]);
+  const row = target.rows[0];
+  if (!row) return sendApiError(res, 404, "not_found", "User not found.");
+  if (row.role === "admin") return sendApiError(res, 400, "bad_request", "Branch-admin access is managed when the account is created.");
+
+  const nextBranchId = assignedBranchId ?? (parsed.data.branchId === undefined ? row.branch_id : parsed.data.branchId);
+  if (nextBranchId) {
+    const branch = await pool.query("SELECT id FROM branches WHERE id = $1 AND shop_id = $2 AND status = 'active'", [nextBranchId, shopId]);
+    if (!branch.rowCount) return sendApiError(res, 400, "bad_request", "Selected branch is not active for this business.");
+  }
+  const permissions = { ...(row.permissions ?? {}), ...parsed.data.permissions } satisfies UserPermissions;
+  const updated = await pool.query(
+    "UPDATE users SET permissions = $1, branch_id = $2, session_version = session_version + 1 WHERE id = $3 AND shop_id = $4 RETURNING id, shop_id, name, email, role, status, created_at, branch_id, permissions",
+    [permissions, nextBranchId, req.params.userId, shopId],
+  );
+  res.json(serializeUser(updated.rows[0]));
+});
+
+usersRouter.post("/:userId/reset-password", async (req, res) => {
+  const { shopId, branchId } = req.auth!;
+  if (!requireAdmin(req, res)) return;
+  const parsed = z.object({ password: z.string().min(8) }).safeParse(req.body);
+  if (!parsed.success) return sendApiError(res, 400, "bad_request", "Password must be at least 8 characters.");
+  const updated = await pool.query(
+    "UPDATE users SET password_hash = $1, session_version = session_version + 1 WHERE id = $2 AND shop_id = $3 AND ($4::uuid IS NULL OR branch_id IS NOT DISTINCT FROM $4::uuid) AND id <> $5 RETURNING id",
+    [await hashPassword(parsed.data.password), req.params.userId, shopId, branchId, req.auth!.userId],
+  );
+  if (!updated.rowCount) return sendApiError(res, 404, "not_found", "User not found or cannot reset your own password here.");
+  res.status(204).end();
+});
+
 usersRouter.post("/:userId/toggle-status", async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId } = req.auth!;
   if (!requireAdmin(req, res)) return;
 
   const { userId } = req.params;
@@ -103,13 +148,13 @@ usersRouter.post("/:userId/toggle-status", async (req, res) => {
     role: string;
     status: string;
   }>(
-    "SELECT id, role, status FROM users WHERE id = $1 AND shop_id = $2 LIMIT 1",
-    [userId, shopId],
+    "SELECT id, role, status FROM users WHERE id = $1 AND shop_id = $2 AND ($3::uuid IS NULL OR branch_id IS NOT DISTINCT FROM $3::uuid) LIMIT 1",
+    [userId, shopId, branchId],
   );
 
   const row = target.rows[0];
   if (!row) return sendApiError(res, 404, "not_found", "User not found.");
-  if (row.role === "admin") return sendApiError(res, 400, "bad_request", "Admin cannot be deactivated here.");
+  if (row.role === "admin") return sendApiError(res, 400, "bad_request", "An admin cannot be deactivated here.");
 
   const nextStatus: UserStatus = row.status === "active" ? "inactive" : "active";
 
@@ -127,13 +172,13 @@ usersRouter.post("/:userId/toggle-status", async (req, res) => {
 });
 
 usersRouter.delete("/:userId", async (req, res) => {
-  const { shopId, userId: adminUserId } = req.auth!;
+  const { shopId, userId: adminUserId, branchId } = req.auth!;
   if (!requireAdmin(req, res)) return;
 
   const { userId } = req.params;
   const target = await pool.query<{ id: string; role: string }>(
-    "SELECT id, role FROM users WHERE id = $1 AND shop_id = $2 LIMIT 1",
-    [userId, shopId],
+    "SELECT id, role FROM users WHERE id = $1 AND shop_id = $2 AND ($3::uuid IS NULL OR branch_id IS NOT DISTINCT FROM $3::uuid) LIMIT 1",
+    [userId, shopId, branchId],
   );
   const row = target.rows[0];
   if (!row) return sendApiError(res, 404, "not_found", "User not found.");

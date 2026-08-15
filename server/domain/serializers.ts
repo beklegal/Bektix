@@ -116,6 +116,7 @@ export function serializeBranch(row: {
 export function serializeProduct(row: {
   id: string;
   shop_id: string;
+  branch_id?: string | null;
   name: string;
   category: string;
   quantity: number;
@@ -131,6 +132,7 @@ export function serializeProduct(row: {
   return {
     id: row.id,
     shopId: row.shop_id,
+    branchId: row.branch_id ?? undefined,
     name: row.name,
     category: row.category,
     quantity: row.quantity,
@@ -149,6 +151,7 @@ export function serializeSale(
   saleRow: {
     id: string;
     shop_id: string;
+    branch_id?: string | null;
     receipt_number: string;
     created_at: unknown;
     cashier_user_id: string;
@@ -166,6 +169,7 @@ export function serializeSale(
   return {
     id: saleRow.id,
     shopId: saleRow.shop_id,
+    branchId: saleRow.branch_id ?? undefined,
     receiptNumber: saleRow.receipt_number,
     createdAt: iso(saleRow.created_at),
     cashierUserId: saleRow.cashier_user_id,

@@ -179,6 +179,20 @@ platformRouter.post("/tenants", async (req, res) => {
   }
 });
 
+platformRouter.post("/tenants/:shopId/admin/reset-password", async (req, res) => {
+  const parsed = z.object({ password: z.string().min(8) }).safeParse(req.body);
+  if (!parsed.success) return sendApiError(res, 400, "bad_request", "Password must be at least 8 characters.");
+  const result = await pool.query(
+    `UPDATE users SET password_hash = $1, session_version = session_version + 1
+     WHERE shop_id = $2 AND role = 'admin' AND id = (
+       SELECT id FROM users WHERE shop_id = $2 AND role = 'admin' ORDER BY created_at ASC LIMIT 1
+     ) RETURNING id`,
+    [await hashPassword(parsed.data.password), req.params.shopId],
+  );
+  if (!result.rowCount) return sendApiError(res, 404, "not_found", "Tenant admin not found.");
+  res.status(204).end();
+});
+
 platformRouter.patch("/tenants/:shopId/status", async (req, res) => {
   const parsed = z.object({ status: z.enum(["active", "inactive"]) }).safeParse(req.body);
   if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid status.");

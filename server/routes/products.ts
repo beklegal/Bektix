@@ -22,43 +22,49 @@ const createProductSchema = z.object({
   size: z.string().optional(),
   color: z.string().optional(),
   warranty: z.string().optional(),
+  branchId: z.string().uuid().optional(),
 });
 
 productsRouter.get("/", async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId } = req.auth!;
 
   const result = await pool.query(
     `
       SELECT id, shop_id, name, category, quantity, cost_price, selling_price,
-             expiry_date, size, color, warranty, created_at, updated_at
+             expiry_date, size, color, warranty, branch_id, created_at, updated_at
       FROM products
-      WHERE shop_id = $1
+      WHERE shop_id = $1 AND branch_id IS NOT DISTINCT FROM $2::uuid
       ORDER BY name ASC
     `,
-    [shopId],
+    [shopId, branchId],
   );
 
   res.json(result.rows.map(serializeProduct));
 });
 
 productsRouter.post("/", requirePermission("manage_inventory"), async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId: assignedBranchId } = req.auth!;
 
   const parsed = createProductSchema.safeParse(req.body);
   if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid product.");
 
   const input = parsed.data;
+  const branchId = assignedBranchId ?? input.branchId ?? null;
+  if (branchId) {
+    const branch = await pool.query("SELECT id FROM branches WHERE id = $1 AND shop_id = $2 AND status = 'active'", [branchId, shopId]);
+    if (!branch.rowCount) return sendApiError(res, 400, "bad_request", "Selected branch is not active for this business.");
+  }
   const id = crypto.randomUUID();
 
   const result = await pool.query(
     `
       INSERT INTO products (
         id, shop_id, name, category, quantity, cost_price, selling_price,
-        expiry_date, size, color, warranty
+        expiry_date, size, color, warranty, branch_id
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING id, shop_id, name, category, quantity, cost_price, selling_price,
-                expiry_date, size, color, warranty, created_at, updated_at
+                expiry_date, size, color, warranty, branch_id, created_at, updated_at
     `,
     [
       id,
@@ -72,6 +78,7 @@ productsRouter.post("/", requirePermission("manage_inventory"), async (req, res)
       input.size ? input.size : null,
       input.color ? input.color : null,
       input.warranty ? input.warranty : null,
+      branchId,
     ],
   );
 
@@ -93,7 +100,7 @@ const patchProductSchema = z
   .refine((val) => Object.keys(val).length > 0, { message: "Empty patch." });
 
 productsRouter.patch("/:productId", requirePermission("manage_inventory"), async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId } = req.auth!;
 
   const parsed = patchProductSchema.safeParse(req.body);
   if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid product update.");
@@ -105,7 +112,7 @@ productsRouter.patch("/:productId", requirePermission("manage_inventory"), async
   const values: unknown[] = [];
   const push = (sql: string, value: unknown) => {
     values.push(value);
-    sets.push(`${sql} = $${values.length + 2}`);
+    sets.push(`${sql} = $${values.length + 3}`);
   };
 
   if (patch.name !== undefined) push("name", patch.name.trim());
@@ -125,11 +132,11 @@ productsRouter.patch("/:productId", requirePermission("manage_inventory"), async
     `
       UPDATE products
       SET ${sets.join(", ")}
-      WHERE id = $1 AND shop_id = $2
+      WHERE id = $1 AND shop_id = $2 AND branch_id IS NOT DISTINCT FROM $3::uuid
       RETURNING id, shop_id, name, category, quantity, cost_price, selling_price,
-                expiry_date, size, color, warranty, created_at, updated_at
+                expiry_date, size, color, warranty, branch_id, created_at, updated_at
     `,
-    [productId, shopId, ...values],
+    [productId, shopId, branchId, ...values],
   );
 
   if (!result.rowCount) return sendApiError(res, 404, "not_found", "Product not found.");
@@ -137,12 +144,12 @@ productsRouter.patch("/:productId", requirePermission("manage_inventory"), async
 });
 
 productsRouter.delete("/:productId", requirePermission("manage_inventory"), async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId } = req.auth!;
 
   const { productId } = req.params;
   const result = await pool.query(
-    "DELETE FROM products WHERE id = $1 AND shop_id = $2",
-    [productId, shopId],
+    "DELETE FROM products WHERE id = $1 AND shop_id = $2 AND branch_id IS NOT DISTINCT FROM $3::uuid",
+    [productId, shopId, branchId],
   );
   if (!result.rowCount) return sendApiError(res, 404, "not_found", "Product not found.");
 

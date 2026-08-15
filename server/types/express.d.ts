@@ -8,7 +8,8 @@ declare global {
         shopId: string;
         role: User["role"];
         user: User;
-        shop: Shop;
+      shop: Shop;
+      branchId: string | null;
       };
     }
   }

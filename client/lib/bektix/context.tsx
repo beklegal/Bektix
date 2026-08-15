@@ -61,6 +61,7 @@ type BektixContextValue = {
     updateTenantFeatures: (shopId: string, features: Partial<Record<TenantFeature, boolean>>) => Promise<void>;
     updateTenantSubscription: (shopId: string, patch: UpdateTenantSubscriptionRequest) => Promise<void>;
     deleteTenant: (shopId: string) => Promise<void>;
+    resetTenantAdminPassword: (shopId: string, password: string) => Promise<void>;
     createBranch: (shopId: string, input: { name: string; location?: string }) => Promise<void>;
     updateShopDetails: (patch: { name?: string; businessType?: BusinessType }) => Promise<void>;
     updateShopPreferences: (patch: Partial<ShopPreferences>) => Promise<void>;
@@ -81,6 +82,8 @@ type BektixContextValue = {
     }) => Promise<void>;
     toggleUserStatus: (userId: string) => Promise<void>;
     deleteUser: (userId: string) => Promise<void>;
+    resetUserPassword: (userId: string, password: string) => Promise<void>;
+    updateUserAccess: (userId: string, patch: { permissions: Partial<User["permissions"]>; branchId?: string | null }) => Promise<void>;
     createSale: (input: {
       items: Array<{ productId: string; quantity: number }>;
       paymentMethod: PaymentMethod;
@@ -328,6 +331,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       },
       updateTenantSubscription: async (shopId, patch) => { await api.updateTenantSubscription(shopId, patch); await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] }); },
       deleteTenant: async (shopId) => { await api.deleteTenant(shopId); await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] }); },
+      resetTenantAdminPassword: async (shopId, password) => { await api.resetTenantAdminPassword(shopId, password); },
       createBranch: async (shopId, input) => {
         await api.createBranch(shopId, input);
         await queryClient.invalidateQueries({ queryKey: ["platform", "tenants"] });
@@ -365,7 +369,7 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await queryClient.invalidateQueries({ queryKey: ["products"] });
       },
       addUser: async ({ name, email, password, role, branchId, permissions }) => {
-        if (role === "admin" || role === "super_admin") throw new Error("Admin accounts cannot be created here.");
+        if (role === "super_admin") throw new Error("Super admin accounts cannot be created here.");
         await api.createUser({ name, email, password, role, branchId, permissions });
         await queryClient.invalidateQueries({ queryKey: ["users"] });
       },
@@ -377,6 +381,8 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
         await api.deleteUser(userId);
         await queryClient.invalidateQueries({ queryKey: ["users"] });
       },
+      resetUserPassword: async (userId, password) => { await api.resetUserPassword(userId, password); },
+      updateUserAccess: async (userId, patch) => { await api.updateUserAccess(userId, patch); await queryClient.invalidateQueries({ queryKey: ["users"] }); },
       createSale: async ({ items, paymentMethod, payerType, amountPaid }) => {
         const sale = await api.createSale({ items, paymentMethod, payerType, amountPaid });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });

@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { User, UserRole } from "@shared/bektix";
-import { Plus, Shield, Trash2, User as UserIcon } from "lucide-react";
+import { KeyRound, Plus, Shield, Trash2, User as UserIcon } from "lucide-react";
 
 type NewUserDraft = {
   name: string;
@@ -139,6 +139,19 @@ export default function Users() {
         variant: "destructive",
       });
     }
+  };
+
+  const resetPassword = async (target: User) => {
+    const password = window.prompt(`Set a new temporary password for ${target.name} (at least 8 characters):`);
+    if (!password) return;
+    if (password.length < 8) return toast({ title: "Password too short", description: "Use at least 8 characters.", variant: "destructive" });
+    try { await actions.resetUserPassword(target.id, password); toast({ title: "Password reset", description: `${target.name} must use the new password to sign in.` }); }
+    catch (err) { toast({ title: "Could not reset password", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" }); }
+  };
+
+  const toggleInventoryAccess = async (target: User) => {
+    try { await actions.updateUserAccess(target.id, { permissions: { ...target.permissions, manage_inventory: !target.permissions.manage_inventory } }); toast({ title: target.permissions.manage_inventory ? "Inventory access removed" : "Inventory access granted" }); }
+    catch (err) { toast({ title: "Could not update access", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" }); }
   };
 
   if (user?.role !== "admin") {
@@ -264,6 +277,12 @@ export default function Users() {
                       <Shield className="mr-2 h-4 w-4" />
                       {u.status === "active" ? "Deactivate" : "Activate"}
                     </Button>
+                    <Button variant="outline" size="sm" className="h-10 px-3" onClick={() => toggleInventoryAccess(u)} disabled={u.role === "admin"}>
+                      {u.permissions.manage_inventory ? "Remove inventory" : "Grant inventory"}
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-10 px-3" onClick={() => resetPassword(u)} disabled={u.id === user?.id}>
+                      <KeyRound className="mr-2 h-4 w-4" />Reset password
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -326,7 +345,7 @@ export default function Users() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Grant system access</DialogTitle>
-            <DialogDescription>Create a sign-in for a cashier or staff member and optionally assign their branch.</DialogDescription>
+            <DialogDescription>Create a sign-in for a branch admin, cashier, or staff member and assign their branch access.</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4">
@@ -361,6 +380,7 @@ export default function Users() {
               >
                 <option value="cashier">Cashier</option>
                 <option value="staff">Staff</option>
+                {!user?.branchId && <option value="admin">Branch admin</option>}
               </select>
             </div>
             <div className="grid gap-2">

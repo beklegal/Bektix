@@ -37,6 +37,7 @@ type ProductDraft = {
   size: string;
   color: string;
   warranty: string;
+  branchId: string;
 };
 
 const emptyDraft: ProductDraft = {
@@ -49,6 +50,7 @@ const emptyDraft: ProductDraft = {
   size: "",
   color: "",
   warranty: "",
+  branchId: "",
 };
 
 function statusForProduct(product: Product, lowStockThreshold: number) {
@@ -68,6 +70,7 @@ function productToDraft(product: Product): ProductDraft {
     size: product.size ?? "",
     color: product.color ?? "",
     warranty: product.warranty ?? "",
+    branchId: product.branchId ?? "",
   };
 }
 
@@ -77,7 +80,7 @@ function productVariantText(product: Product) {
 }
 
 export default function Inventory() {
-  const { shop, products, actions } = useBektix();
+  const { shop, user, branches, products, actions } = useBektix();
   const currency = shop?.preferences.currency || "GH₵";
   const lowStockThreshold = shop?.preferences.lowStockThreshold ?? 10;
   const enableExpiryTracking = shop?.preferences.enableExpiryTracking ?? true;
@@ -182,11 +185,13 @@ export default function Inventory() {
           size: enableProductVariants ? draft.size || undefined : undefined,
           color: enableProductVariants ? draft.color || undefined : undefined,
           warranty: draft.warranty || undefined,
+          branchId: draft.branchId || undefined,
         });
         toast({ title: "Product updated" });
       } else {
         await actions.addProduct({
           shopId: shop.id,
+          branchId: draft.branchId || undefined,
           name,
           category,
           quantity,
@@ -412,7 +417,7 @@ export default function Inventory() {
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit product" : "Add product"}</DialogTitle>
             <DialogDescription>
-              {editingId ? "Update stock or pricing." : "Add a new product to your inventory."}
+              {editingId ? "Update stock or pricing." : "Add a new product and choose the branch holding this stock."}
             </DialogDescription>
           </DialogHeader>
 
@@ -439,6 +444,14 @@ export default function Inventory() {
                 <option>Other</option>
               </select>
             </div>
+            {!editingId && !user?.branchId && <div className="grid gap-2">
+              <label className="text-sm font-medium">Inventory branch *</label>
+              <select value={draft.branchId} onChange={(e) => setDraft({ ...draft, branchId: e.target.value })} className="h-11 rounded-md border border-border bg-background px-3 text-sm">
+                <option value="">Main branch</option>
+                {branches.filter((branch) => branch.status === "active").map((branch) => <option key={branch.id} value={branch.id}>{branch.name}{branch.location ? ` — ${branch.location}` : ""}</option>)}
+              </select>
+              <p className="text-xs text-muted-foreground">Branch stock is separate from the main branch and other branches.</p>
+            </div>}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="grid gap-2">

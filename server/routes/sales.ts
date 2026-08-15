@@ -27,16 +27,16 @@ type ProductRow = {
   selling_price: number;
 };
 
-async function fetchSaleWithItems(shopId: string, saleId: string) {
+async function fetchSaleWithItems(shopId: string, saleId: string, branchId: string | null) {
   const saleResult = await pool.query(
     `
-      SELECT id, shop_id, receipt_number, created_at, cashier_user_id, cashier_name,
+      SELECT id, shop_id, branch_id, receipt_number, created_at, cashier_user_id, cashier_name,
              subtotal, tax, total, amount_paid, change, payment_method, payer_type
       FROM sales
-      WHERE id = $1 AND shop_id = $2
+      WHERE id = $1 AND shop_id = $2 AND branch_id IS NOT DISTINCT FROM $3::uuid
       LIMIT 1
     `,
-    [saleId, shopId],
+    [saleId, shopId, branchId],
   );
   const saleRow = saleResult.rows[0];
   if (!saleRow) return null;
@@ -56,18 +56,18 @@ async function fetchSaleWithItems(shopId: string, saleId: string) {
 }
 
 salesRouter.get("/", async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId } = req.auth!;
 
   const salesResult = await pool.query(
     `
-      SELECT id, shop_id, receipt_number, created_at, cashier_user_id, cashier_name,
+      SELECT id, shop_id, branch_id, receipt_number, created_at, cashier_user_id, cashier_name,
              subtotal, tax, total, amount_paid, change, payment_method, payer_type
       FROM sales
-      WHERE shop_id = $1
+      WHERE shop_id = $1 AND branch_id IS NOT DISTINCT FROM $2::uuid
       ORDER BY created_at DESC
       LIMIT 250
     `,
-    [shopId],
+    [shopId, branchId],
   );
 
   const saleIds = salesResult.rows.map((r) => r.id as string);
@@ -113,7 +113,7 @@ const createSaleSchema = z.object({
 });
 
 salesRouter.post("/", requirePermission("collect_payments"), async (req, res) => {
-  const { userId, shopId } = req.auth!;
+  const { userId, shopId, branchId } = req.auth!;
 
   const parsed = createSaleSchema.safeParse(req.body);
   if (!parsed.success) return sendApiError(res, 400, "bad_request", "Invalid sale.");
@@ -128,10 +128,10 @@ salesRouter.post("/", requirePermission("collect_payments"), async (req, res) =>
       `
         SELECT id, name, quantity, cost_price, selling_price
         FROM products
-        WHERE shop_id = $1 AND id = ANY($2::uuid[])
+        WHERE shop_id = $1 AND id = ANY($2::uuid[]) AND branch_id IS NOT DISTINCT FROM $3::uuid
         FOR UPDATE
       `,
-      [shopId, productIds],
+      [shopId, productIds, branchId],
     );
 
     const productRows = productResult.rows as ProductRow[];
@@ -187,14 +187,15 @@ salesRouter.post("/", requirePermission("collect_payments"), async (req, res) =>
         await client.query(
           `
             INSERT INTO sales (
-              id, shop_id, receipt_number, cashier_user_id, cashier_name,
+              id, shop_id, branch_id, receipt_number, cashier_user_id, cashier_name,
               subtotal, tax, total, amount_paid, change, payment_method, payer_type
             )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
           `,
           [
             saleId,
             shopId,
+            branchId,
             receiptNumber,
             cashier.id,
             cashier.name || cashier.email,
@@ -231,15 +232,15 @@ salesRouter.post("/", requirePermission("collect_payments"), async (req, res) =>
         `
           UPDATE products
           SET quantity = quantity - $1, updated_at = now()
-          WHERE id = $2 AND shop_id = $3
+          WHERE id = $2 AND shop_id = $3 AND branch_id IS NOT DISTINCT FROM $4::uuid
         `,
-        [li.quantity, li.productId, shopId],
+        [li.quantity, li.productId, shopId, branchId],
       );
     }
 
     await client.query("COMMIT");
 
-    const sale = await fetchSaleWithItems(shopId, saleId);
+    const sale = await fetchSaleWithItems(shopId, saleId, branchId);
     res.status(201).json(sale);
   } catch (err: any) {
     await client.query("ROLLBACK");
@@ -251,9 +252,9 @@ salesRouter.post("/", requirePermission("collect_payments"), async (req, res) =>
 });
 
 salesRouter.get("/:saleId", async (req, res) => {
-  const { shopId } = req.auth!;
+  const { shopId, branchId } = req.auth!;
 
-  const sale = await fetchSaleWithItems(shopId, req.params.saleId);
+  const sale = await fetchSaleWithItems(shopId, req.params.saleId, branchId);
   if (!sale) return sendApiError(res, 404, "not_found", "Sale not found.");
   res.json(sale);
 });

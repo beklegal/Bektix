@@ -98,6 +98,8 @@ export async function migrate() {
     await client.query(`
       CREATE INDEX IF NOT EXISTS products_shop_id_idx ON products(shop_id);
     `);
+    await client.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS branch_id uuid NULL REFERENCES branches(id) ON DELETE SET NULL;`);
+    await client.query(`CREATE INDEX IF NOT EXISTS products_shop_branch_id_idx ON products(shop_id, branch_id);`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS sales (
@@ -121,6 +123,8 @@ export async function migrate() {
       ALTER TABLE sales
       ADD COLUMN IF NOT EXISTS payer_type text NOT NULL DEFAULT 'walkIn';
     `);
+    await client.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS branch_id uuid NULL REFERENCES branches(id) ON DELETE SET NULL;`);
+    await client.query(`CREATE INDEX IF NOT EXISTS sales_shop_branch_created_at_idx ON sales(shop_id, branch_id, created_at DESC);`);
 
     await client.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS sales_shop_receipt_number_uq

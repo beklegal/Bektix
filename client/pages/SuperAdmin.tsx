@@ -117,6 +117,14 @@ export default function SuperAdmin() {
     if (window.prompt(`Type ${tenant.shop.name} to permanently delete this business and all of its data.`) !== tenant.shop.name) return;
     try { await actions.deleteTenant(tenant.shop.id); toast({ title: "Business account deleted" }); } catch (err) { toast({ title: "Could not delete account", description: err instanceof Error ? err.message : "Try again.", variant: "destructive" }); }
   };
+  const resetTenantPassword = async (tenant: PlatformTenant) => {
+    if (!tenant.admin) return;
+    const password = window.prompt(`Set a new temporary password for ${tenant.admin.name} (at least 8 characters):`);
+    if (!password) return;
+    if (password.length < 8) return toast({ title: "Password too short", description: "Use at least 8 characters.", variant: "destructive" });
+    try { await actions.resetTenantAdminPassword(tenant.shop.id, password); toast({ title: "Tenant admin password reset", description: "Share the new temporary password securely." }); }
+    catch (err) { toast({ title: "Could not reset password", description: err instanceof Error ? err.message : "Try again.", variant: "destructive" }); }
+  };
 
   return (
     <AppShell title="Super Admin" description="Manage BEKTIX tenants, branches, tenant admins, and module access." active="super-admin">
@@ -170,6 +178,7 @@ export default function SuperAdmin() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" className="gap-2" onClick={() => setSubscriptionTenant(tenant)}><CreditCard className="h-4 w-4" />Subscription</Button>
+                <Button variant="outline" onClick={() => resetTenantPassword(tenant)} disabled={!tenant.admin}>Reset admin password</Button>
                 <Button variant="outline" className="gap-2" onClick={() => setBranchTenantId(tenant.shop.id)}>
                   <GitBranch className="h-4 w-4" />
                   Add branch

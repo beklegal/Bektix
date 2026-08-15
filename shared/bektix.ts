@@ -78,6 +78,8 @@ export interface User {
 export interface Product {
   id: string;
   shopId: string;
+  /** Undefined means inventory held by the tenant's main branch. */
+  branchId?: string;
   name: string;
   category: string;
   quantity: number;
@@ -102,6 +104,8 @@ export interface SaleLineItem {
 export interface Sale {
   id: string;
   shopId: string;
+  /** Undefined means a sale made by the tenant's main branch. */
+  branchId?: string;
   receiptNumber: string;
   createdAt: string; // ISO
   cashierUserId: string;

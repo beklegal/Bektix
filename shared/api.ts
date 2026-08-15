@@ -87,7 +87,7 @@ export interface CreateProductRequest
     | "size"
     | "color"
     | "warranty"
-  > {}
+  > { branchId?: string; }
 
 export type UpdateProductRequest = Partial<CreateProductRequest>;
 
@@ -95,9 +95,15 @@ export interface CreateUserRequest {
   name: string;
   email: string;
   password: string;
-  role: Exclude<User["role"], "admin" | "super_admin">;
+  role: Exclude<User["role"], "super_admin">;
   branchId?: string;
   permissions?: Partial<UserPermissions>;
+}
+
+export interface ResetPasswordRequest { password: string; }
+export interface UpdateUserAccessRequest {
+  permissions: Partial<UserPermissions>;
+  branchId?: string | null;
 }
 
 export interface CreateSaleRequest {

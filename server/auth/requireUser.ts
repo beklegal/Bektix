@@ -25,6 +25,7 @@ type UserRow = {
   user_created_at: unknown;
   user_session_version: number;
   user_permissions: unknown;
+  user_branch_id: string | null;
 };
 
 export const requireUser: RequestHandler = async (req, res, next) => {
@@ -79,7 +80,7 @@ export const requireUser: RequestHandler = async (req, res, next) => {
         u.status AS user_status,
         u.created_at AS user_created_at,
         u.session_version AS user_session_version
-        ,u.permissions AS user_permissions
+        ,u.permissions AS user_permissions, u.branch_id AS user_branch_id
       FROM users u
       WHERE u.id = $1 AND u.shop_id = $2
       LIMIT 1
@@ -112,6 +113,7 @@ export const requireUser: RequestHandler = async (req, res, next) => {
     status: userRow.user_status,
     created_at: userRow.user_created_at,
     permissions: userRow.user_permissions,
+    branch_id: userRow.user_branch_id,
   });
 
   const shop = serializeShop({
@@ -130,6 +132,7 @@ export const requireUser: RequestHandler = async (req, res, next) => {
     role: user.role,
     user,
     shop,
+    branchId: userRow.user_branch_id,
   };
 
   next();
