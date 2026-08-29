@@ -13,6 +13,7 @@ import { payrollRouter } from "./routes/payroll.js";
 import { creditorsRouter } from "./routes/creditors.js";
 import { bankingRouter } from "./routes/banking.js";
 import { platformRouter } from "./routes/platform.js";
+import { paymentsRouter } from "./routes/payments.js";
 import {
   apiRateLimit,
   rejectCrossOriginWrites,
@@ -29,7 +30,7 @@ export async function createServer() {
   app.disable("x-powered-by");
   app.use(securityHeaders());
   app.use(cookieParser());
-  app.use(express.json({ limit: "100kb" }));
+  app.use(express.json({ limit: "100kb", verify: (req, _res, buf) => { (req as any).rawBody = Buffer.from(buf); } }));
   app.use(express.urlencoded({ extended: true, limit: "100kb" }));
   app.use(requestErrorHandler);
   app.use("/api", rejectCrossOriginWrites(), apiRateLimit);
@@ -53,6 +54,7 @@ export async function createServer() {
   app.use("/api/payroll", payrollRouter);
   app.use("/api/creditors", creditorsRouter);
   app.use("/api/banking", bankingRouter);
+  app.use("/api/payments", paymentsRouter);
 
   return app;
 }

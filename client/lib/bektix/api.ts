@@ -112,6 +112,15 @@ export const api = {
     apiRequest<Sale>("/api/sales", { method: "POST", json: input }),
   getSale: (saleId: string) => apiRequest<Sale>(`/api/sales/${saleId}`),
 
+  getPaymentSettings: () => apiRequest<{ connected: boolean; mode?: "test" | "live"; status?: string; keySuffix?: string; webhookUrl: string }>("/api/payments/settings"),
+  savePaymentSettings: (input: { secretKey: string; mode: "test" | "live" }) => apiRequest("/api/payments/settings", { method: "PUT", json: input }),
+  testPaymentSettings: () => apiRequest<{ ok: true }>("/api/payments/settings/test", { method: "POST" }),
+  disconnectPaymentSettings: () => apiRequest<void>("/api/payments/settings", { method: "DELETE" }),
+  requestMobileMoney: (input: { items: Array<{ productId: string; quantity: number }>; phoneNumber: string; email?: string; network: "mtn" | "atl" | "vod"; idempotencyKey: string }) => apiRequest<{ id: string; reference: string; status: string; amount: number; currency: string; expiresAt: string; failureReason?: string; saleId?: string }>("/api/payments/mobile-money/request", { method: "POST", json: input }),
+  getPayment: (id: string) => apiRequest<{ id: string; reference: string; status: string; amount: number; currency: string; expiresAt: string; failureReason?: string; saleId?: string }>(`/api/payments/${id}`),
+  cancelPayment: (id: string) => apiRequest<{ id: string; status: string }>(`/api/payments/${id}/cancel`, { method: "POST" }),
+  completePayment: (id: string) => apiRequest<{ saleId: string }>(`/api/payments/${id}/complete`, { method: "POST" }),
+
   getDebtors: () => apiRequest<Debtor[]>("/api/debtors"),
   createDebtor: (input: CreateDebtorRequest) =>
     apiRequest<Debtor>("/api/debtors", { method: "POST", json: input }),

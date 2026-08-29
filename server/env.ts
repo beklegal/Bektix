@@ -20,6 +20,9 @@ const baseSchema = z.object({
     z.string().min(8).optional(),
   ),
   NODE_ENV: z.enum(["development", "production", "test"]).optional(),
+  PAYMENT_CREDENTIALS_ENCRYPTION_KEY: z.string().optional(),
+  PAYMENTS_RECONCILIATION_SECRET: z.string().optional(),
+  APP_URL: z.string().url().optional(),
 });
 
 const strictSchema = baseSchema.extend({
@@ -43,6 +46,9 @@ const strictSchema = baseSchema.extend({
     ),
   SUPER_ADMIN_BOOTSTRAP_EMAIL: z.string().email(),
   SUPER_ADMIN_BOOTSTRAP_PASSWORD: z.string().min(8),
+  PAYMENT_CREDENTIALS_ENCRYPTION_KEY: z.string().min(32),
+  PAYMENTS_RECONCILIATION_SECRET: z.string().min(32),
+  APP_URL: z.string().url(),
 });
 
 const devSchema = baseSchema.extend({
@@ -68,6 +74,9 @@ function getEnv() {
     SUPER_ADMIN_BOOTSTRAP_EMAIL: process.env.SUPER_ADMIN_BOOTSTRAP_EMAIL,
     SUPER_ADMIN_BOOTSTRAP_PASSWORD: process.env.SUPER_ADMIN_BOOTSTRAP_PASSWORD,
     NODE_ENV: nodeEnv as "development" | "production" | "test",
+    PAYMENT_CREDENTIALS_ENCRYPTION_KEY: process.env.PAYMENT_CREDENTIALS_ENCRYPTION_KEY,
+    PAYMENTS_RECONCILIATION_SECRET: process.env.PAYMENTS_RECONCILIATION_SECRET,
+    APP_URL: process.env.APP_URL,
   };
 
   if (nodeEnv === "development") {
@@ -77,6 +86,7 @@ function getEnv() {
         envValue.DATABASE_URL ||
         "postgresql://postgres:postgres@localhost:5432/bektix?sslmode=disable",
       JWT_SECRET: envValue.JWT_SECRET || "dev-secret-change-me-to-a-long-random-string-1234",
+      PAYMENT_CREDENTIALS_ENCRYPTION_KEY: envValue.PAYMENT_CREDENTIALS_ENCRYPTION_KEY || "dev-payment-encryption-key-change-me-32!",
     });
   }
 

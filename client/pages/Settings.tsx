@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, Trash2 } from "lucide-react";
+import { api } from "@/lib/bektix/api";
 
 type SettingsForm = {
   shopName: string;
@@ -38,6 +39,12 @@ export default function Settings() {
   const [resetOpen, setResetOpen] = useState(false);
   const [resetConfirm, setResetConfirm] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [paymentKey, setPaymentKey] = useState("");
+  const [paymentMode, setPaymentMode] = useState<"test" | "live">("test");
+  const [paymentInfo, setPaymentInfo] = useState<{ connected: boolean; mode?: "test" | "live"; keySuffix?: string; webhookUrl: string } | null>(null);
+
+  useEffect(() => { if (user?.role === "admin") api.getPaymentSettings().then(setPaymentInfo).catch(() => undefined); }, [user?.role]);
+  const savePayment = async () => { try { await api.savePaymentSettings({ secretKey: paymentKey.trim(), mode: paymentMode }); setPaymentKey(""); setPaymentInfo(await api.getPaymentSettings()); toast({ title: "Paystack connected" }); } catch (err) { toast({ title: "Could not connect Paystack", description: err instanceof Error ? err.message : "Please check the key.", variant: "destructive" }); } };
 
   const initial = useMemo<SettingsForm>(() => {
     return {
@@ -226,6 +233,17 @@ export default function Settings() {
           </div>
         </Card>
       </div>
+
+      <Card className="mt-6 p-6">
+        <p className="text-lg font-semibold">Mobile Money payments</p>
+        <p className="mt-1 text-sm text-muted-foreground">Connect this business’s own Paystack Ghana account. Secret keys are encrypted and never shown again.</p>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value as "test" | "live")} className="h-11 rounded-md border border-border bg-background px-3 text-sm"><option value="test">Test mode</option><option value="live">Live mode</option></select>
+          <Input type="password" value={paymentKey} onChange={(e) => setPaymentKey(e.target.value)} placeholder={paymentInfo?.connected ? `Connected ••••${paymentInfo.keySuffix}` : "Paystack secret key (sk_test_ / sk_live_)"} />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-3"><Button onClick={savePayment} disabled={!paymentKey.trim()}>Save Paystack key</Button>{paymentInfo?.connected && <><Button variant="outline" onClick={async () => { try { await api.testPaymentSettings(); toast({ title: "Paystack connection is working" }); } catch { toast({ title: "Connection test failed", variant: "destructive" }); } }}>Test connection</Button><Button variant="destructive" onClick={async () => { await api.disconnectPaymentSettings(); setPaymentInfo(await api.getPaymentSettings()); toast({ title: "Paystack disconnected" }); }}>Disconnect</Button></>}</div>
+        {paymentInfo?.webhookUrl && <p className="mt-4 break-all rounded-md bg-muted p-3 text-xs text-muted-foreground">Configure this URL in the connected Paystack dashboard: {paymentInfo.webhookUrl}</p>}
+      </Card>
 
       <Card className="mt-6 p-6">
         <p className="text-lg font-semibold">Features</p>

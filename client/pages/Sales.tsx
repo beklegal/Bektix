@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PayerType, PaymentMethod } from "@shared/bektix";
 import AppShell from "@/components/AppShell";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { api } from "@/lib/bektix/api";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,12 @@ export default function Sales() {
   const [payerType, setPayerType] = useState<PayerType>("walkIn");
   const [amountPaid, setAmountPaid] = useState("");
   const [printReceipt, setPrintReceipt] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [network, setNetwork] = useState<"mtn" | "atl" | "vod">("mtn");
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [requesting, setRequesting] = useState(false);
 
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -112,10 +119,16 @@ export default function Sales() {
     setPayerType("walkIn");
     setAmountPaid(total.toFixed(2));
     setPrintReceipt(shop?.preferences.autoPrintReceipt ?? false);
+    setPaymentId(null); setPaymentStatus(null); setPhoneNumber(""); setCustomerEmail("");
     setPaymentOpen(true);
   };
 
   const confirmPayment = async () => {
+    if (paymentMethod === "mobileMoney") {
+      if (!paymentId || paymentStatus !== "verified") { toast({ title: "Wait for verified payment", variant: "destructive" }); return; }
+      try { const { saleId } = await api.completePayment(paymentId); setPaymentOpen(false); setCart([]); navigate(printReceipt ? `/receipt/${saleId}?autoprint=1` : `/receipt/${saleId}`); } catch (err) { toast({ title: "Could not complete sale", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" }); }
+      return;
+    }
     const paid = Number.parseFloat(amountPaid);
     if (!Number.isFinite(paid) || paid < total) {
       toast({ title: "Insufficient payment", variant: "destructive" });
@@ -141,6 +154,14 @@ export default function Sales() {
       });
     }
   };
+
+  const requestMobileMoney = async () => {
+    if (!phoneNumber.trim()) { toast({ title: "Customer mobile number is required", variant: "destructive" }); return; }
+    setRequesting(true);
+    try { const result = await api.requestMobileMoney({ items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity })), phoneNumber, email: customerEmail.trim() || undefined, network, idempotencyKey: crypto.randomUUID() }); setPaymentId(result.id); setPaymentStatus(result.status); }
+    catch (err) { toast({ title: "Payment request failed", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" }); } finally { setRequesting(false); }
+  };
+  useEffect(() => { if (!paymentId || !["pending", "requested"].includes(paymentStatus || "")) return; const timer = window.setInterval(async () => { try { const p = await api.getPayment(paymentId); setPaymentStatus(p.status); } catch { /* retry */ } }, 4000); return () => window.clearInterval(timer); }, [paymentId, paymentStatus]);
 
   const change = useMemo(() => {
     const paid = Number.parseFloat(amountPaid);
@@ -389,6 +410,16 @@ export default function Sales() {
               )}
             </div>
 
+            {paymentMethod === "mobileMoney" && (
+              <Card className="grid gap-3 border-accent/30 bg-accent/5 p-4">
+                <p className="font-semibold">Mobile Money</p>
+                <Input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} inputMode="tel" placeholder="024 XXX XXXX" disabled={!!paymentId} />
+                <Input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} inputMode="email" placeholder="Customer email (optional)" disabled={!!paymentId} />
+                <select value={network} onChange={(e) => setNetwork(e.target.value as typeof network)} disabled={!!paymentId} className="h-11 rounded-md border border-border bg-background px-3 text-sm"><option value="mtn">MTN Mobile Money</option><option value="atl">AT Money / AirtelTigo</option><option value="vod">Telecel Cash</option></select>
+                {!paymentId ? <Button type="button" onClick={requestMobileMoney} disabled={requesting}>{requesting ? "Requesting payment..." : "Request payment"}</Button> : <div className="rounded-md bg-background p-3 text-sm"><p className="font-medium">{paymentStatus === "verified" ? "Payment successful — complete the sale." : paymentStatus === "expired" ? "Payment request expired." : "Payment prompt sent — waiting for customer approval..."}</p>{["pending", "requested"].includes(paymentStatus || "") && <Button className="mt-3" variant="outline" size="sm" onClick={async () => { await api.cancelPayment(paymentId); setPaymentStatus("cancelled"); }}>Cancel request</Button>}</div>}
+              </Card>
+            )}
+
             <div className="flex items-center justify-between rounded-lg border border-border bg-muted px-3 py-2">
               <div>
                 <p className="text-sm font-medium">Print receipt</p>
@@ -405,8 +436,9 @@ export default function Sales() {
             <Button
               onClick={confirmPayment}
               className="h-11 bg-accent hover:bg-accent/90 text-accent-foreground font-bold"
+              disabled={paymentMethod === "mobileMoney" && paymentStatus !== "verified"}
             >
-              Confirm Sale
+              {paymentMethod === "mobileMoney" ? "Complete Sale" : "Confirm Sale"}
             </Button>
           </DialogFooter>
         </DialogContent>

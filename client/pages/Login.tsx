@@ -100,7 +100,7 @@ export default function Login() {
 
       <div className="mt-6 border-t border-border pt-6">
         <p className="text-center text-xs text-muted-foreground">
-          Accounts are managed by BEKTIX super admin and tenant admins.
+          Business Management System.
         </p>
       </div>
     </AuthShell>
