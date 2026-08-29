@@ -12,6 +12,7 @@ import {
   serializeSupplierPayment,
 } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
+import { auditEvent, inventoryMovement, outboxEvent } from "../domain/commerce.js";
 
 export const creditorsRouter = express.Router();
 creditorsRouter.use(requireUser);
@@ -423,6 +424,7 @@ creditorsRouter.post("/purchase-invoices", async (req, res) => {
         `,
         [item.quantity, item.unitCost, item.productId, shopId],
       );
+      await inventoryMovement(client, { shopId, branchId: req.auth!.branchId, productId: item.productId, type: "purchase_receipt", delta: item.quantity, unitCost: item.unitCost, referenceType: "purchase_invoice", referenceId: invoiceId, userId: req.auth!.userId });
     }
 
     if (input.purchaseOrderId) {
@@ -432,6 +434,8 @@ creditorsRouter.post("/purchase-invoices", async (req, res) => {
       );
     }
 
+    await auditEvent(client, { shopId, branchId: req.auth!.branchId, userId: req.auth!.userId, entityType: "purchase_invoice", entityId: invoiceId, action: "received" });
+    await outboxEvent(client, shopId, "purchase.received", "purchase_invoice", invoiceId, { supplierId: input.supplierId });
     await client.query("COMMIT");
     const payload = await fetchCreditorsPayload(shopId);
     res.status(201).json(payload.purchaseInvoices.find((invoice) => invoice.id === invoiceId));

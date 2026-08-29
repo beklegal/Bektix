@@ -14,6 +14,7 @@ import { creditorsRouter } from "./routes/creditors.js";
 import { bankingRouter } from "./routes/banking.js";
 import { platformRouter } from "./routes/platform.js";
 import { paymentsRouter } from "./routes/payments.js";
+import { commerceRouter } from "./routes/commerce.js";
 import {
   apiRateLimit,
   rejectCrossOriginWrites,
@@ -55,6 +56,7 @@ export async function createServer() {
   app.use("/api/creditors", creditorsRouter);
   app.use("/api/banking", bankingRouter);
   app.use("/api/payments", paymentsRouter);
+  app.use("/api/commerce", commerceRouter);
 
   return app;
 }

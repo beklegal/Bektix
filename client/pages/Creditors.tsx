@@ -380,15 +380,16 @@ export default function Creditors() {
                 {purchaseOrders.filter((order) => order.supplierId === purchaseDraft.supplierId).map((order) => <option key={order.id} value={order.id}>{order.orderNumber}</option>)}
               </select>
             )}
-            <select className="h-11 rounded-md border border-border bg-background px-3 text-sm" value={purchaseDraft.productId} onChange={(e) => setPurchaseDraft({ ...purchaseDraft, productId: e.target.value })}>
-              <option value="">Select product</option>
-              {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
-            </select>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Input type="date" value={purchaseDraft.date} onChange={(e) => setPurchaseDraft({ ...purchaseDraft, date: e.target.value })} />
-              <Input inputMode="numeric" placeholder="Quantity" value={purchaseDraft.quantity} onChange={(e) => setPurchaseDraft({ ...purchaseDraft, quantity: e.target.value })} />
-              <Input inputMode="decimal" placeholder={`Unit cost (${currency})`} value={purchaseDraft.unitCost} onChange={(e) => setPurchaseDraft({ ...purchaseDraft, unitCost: e.target.value })} />
+            <div className="space-y-3">
+              {purchaseDraft.lines.map((line) => <div key={line.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_100px_120px_auto]">
+                <select className="h-11 rounded-md border border-border bg-background px-3 text-sm" value={line.productId} onChange={(e) => updatePurchaseLine(line.id, { productId: e.target.value })}><option value="">Select product</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}</select>
+                <Input inputMode="numeric" placeholder="Qty" value={line.quantity} onChange={(e) => updatePurchaseLine(line.id, { quantity: e.target.value })} />
+                <Input inputMode="decimal" placeholder={`Cost (${currency})`} value={line.unitCost} onChange={(e) => updatePurchaseLine(line.id, { unitCost: e.target.value })} />
+                <Button type="button" variant="outline" onClick={() => removePurchaseLine(line.id)}>Remove</Button>
+              </div>)}
+              <Button type="button" variant="outline" onClick={addPurchaseLine}>Add item</Button>
             </div>
+            <Input type="date" value={purchaseDraft.date} onChange={(e) => setPurchaseDraft({ ...purchaseDraft, date: e.target.value })} />
             {poOpen ? (
               <Input type="date" value={purchaseDraft.expectedDate} onChange={(e) => setPurchaseDraft({ ...purchaseDraft, expectedDate: e.target.value })} />
             ) : (

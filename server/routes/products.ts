@@ -7,6 +7,7 @@ import { requirePermission } from "../auth/requirePermission.js";
 import { pool } from "../db/pool.js";
 import { serializeProduct } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
+import { auditEvent, inventoryMovement } from "../domain/commerce.js";
 
 export const productsRouter = express.Router();
 productsRouter.use(requireUser);
@@ -27,7 +28,6 @@ const createProductSchema = z.object({
 
 productsRouter.get("/", async (req, res) => {
   const { shopId, branchId } = req.auth!;
-
   const result = await pool.query(
     `
       SELECT id, shop_id, name, category, quantity, cost_price, selling_price,
@@ -55,8 +55,10 @@ productsRouter.post("/", requirePermission("manage_inventory"), async (req, res)
     if (!branch.rowCount) return sendApiError(res, 400, "bad_request", "Selected branch is not active for this business.");
   }
   const id = crypto.randomUUID();
-
-  const result = await pool.query(
+  const client = await pool.connect();
+  try {
+  await client.query("BEGIN");
+  const result = await client.query(
     `
       INSERT INTO products (
         id, shop_id, name, category, quantity, cost_price, selling_price,
@@ -82,7 +84,11 @@ productsRouter.post("/", requirePermission("manage_inventory"), async (req, res)
     ],
   );
 
+  if (input.quantity > 0) await inventoryMovement(client, { shopId, branchId, productId: id, type: "opening_balance", delta: input.quantity, unitCost: input.costPrice, referenceType: "product", referenceId: id });
+  await auditEvent(client, { shopId, branchId, entityType: "product", entityId: id, action: "created" });
+  await client.query("COMMIT");
   res.status(201).json(serializeProduct(result.rows[0]));
+  } catch (err) { await client.query("ROLLBACK"); throw err; } finally { client.release(); }
 });
 
 const patchProductSchema = z
@@ -128,7 +134,12 @@ productsRouter.patch("/:productId", requirePermission("manage_inventory"), async
   // Always touch updated_at
   sets.push("updated_at = now()");
 
-  const result = await pool.query(
+  const client = await pool.connect();
+  try {
+  await client.query("BEGIN");
+  const before = await client.query("SELECT quantity, cost_price FROM products WHERE id=$1 AND shop_id=$2 AND branch_id IS NOT DISTINCT FROM $3::uuid FOR UPDATE", [productId, shopId, branchId]);
+  if (!before.rowCount) { await client.query("ROLLBACK"); return sendApiError(res, 404, "not_found", "Product not found."); }
+  const result = await client.query(
     `
       UPDATE products
       SET ${sets.join(", ")}
@@ -139,8 +150,11 @@ productsRouter.patch("/:productId", requirePermission("manage_inventory"), async
     [productId, shopId, branchId, ...values],
   );
 
-  if (!result.rowCount) return sendApiError(res, 404, "not_found", "Product not found.");
+  if (patch.quantity !== undefined) { const delta = patch.quantity - Number(before.rows[0].quantity); if (delta !== 0) await inventoryMovement(client, { shopId, branchId, productId, type: "adjustment", delta, unitCost: patch.costPrice ?? Number(before.rows[0].cost_price), referenceType: "product", referenceId: productId }); }
+  await auditEvent(client, { shopId, branchId, entityType: "product", entityId: productId, action: "updated" });
+  await client.query("COMMIT");
   res.json(serializeProduct(result.rows[0]));
+  } catch (err) { await client.query("ROLLBACK"); throw err; } finally { client.release(); }
 });
 
 productsRouter.delete("/:productId", requirePermission("manage_inventory"), async (req, res) => {

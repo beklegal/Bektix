@@ -8,6 +8,7 @@ import { requirePermission } from "../auth/requirePermission.js";
 import { pool } from "../db/pool.js";
 import { serializeSale, serializeSaleLineItem } from "../domain/serializers.js";
 import { sendApiError } from "../http/errors.js";
+import { auditEvent, inventoryMovement, outboxEvent } from "../domain/commerce.js";
 
 export const salesRouter = express.Router();
 salesRouter.use(requireUser);
@@ -236,7 +237,15 @@ salesRouter.post("/", requirePermission("collect_payments"), async (req, res) =>
         `,
         [li.quantity, li.productId, shopId, branchId],
       );
+      await inventoryMovement(client, { shopId, branchId, productId: li.productId, type: "sale", delta: -li.quantity, unitCost: li.unitCost, referenceType: "sale", referenceId: saleId, userId });
     }
+
+    const orderId = crypto.randomUUID();
+    await client.query("INSERT INTO orders (id,shop_id,branch_id,sale_id,source,status,subtotal,tax,total) VALUES ($1,$2,$3,$4,'pos','fulfilled',$5,$6,$7)", [orderId, shopId, branchId, saleId, subtotal, tax, total]);
+    for (const li of lineItems) await client.query("INSERT INTO order_items (id,order_id,product_id,name,quantity,unit_price,unit_cost) VALUES ($1,$2,$3,$4,$5,$6,$7)", [crypto.randomUUID(),orderId,li.productId,li.name,li.quantity,li.unitPrice,li.unitCost]);
+    await client.query("INSERT INTO payment_allocations (id,shop_id,sale_id,order_id,method,amount,currency) VALUES ($1,$2,$3,$4,$5,$6,'GHS')", [crypto.randomUUID(),shopId,saleId,orderId,parsed.data.paymentMethod,parsed.data.amountPaid]);
+    await auditEvent(client, { shopId, branchId, userId, entityType: "sale", entityId: saleId, action: "completed", metadata: { orderId, paymentMethod: parsed.data.paymentMethod } });
+    await outboxEvent(client, shopId, "sale.completed", "sale", saleId, { orderId, receiptNumber });
 
     await client.query("COMMIT");
 
