@@ -46,9 +46,6 @@ const strictSchema = baseSchema.extend({
     ),
   SUPER_ADMIN_BOOTSTRAP_EMAIL: z.string().email(),
   SUPER_ADMIN_BOOTSTRAP_PASSWORD: z.string().min(8),
-  PAYMENT_CREDENTIALS_ENCRYPTION_KEY: z.string().min(32),
-  PAYMENTS_RECONCILIATION_SECRET: z.string().min(32),
-  APP_URL: z.string().url(),
 });
 
 const devSchema = baseSchema.extend({
