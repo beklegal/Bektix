@@ -268,7 +268,7 @@ export default function Inventory() {
       </div>
 
       {/* Mobile cards */}
-      <div className="mt-6 grid gap-3 md:hidden">
+      <div className="mt-6 grid gap-3 lg:hidden">
         {sorted.map((product) => {
           const status = statusForProduct(product, lowStockThreshold);
           const variantText = productVariantText(product);
@@ -336,7 +336,7 @@ export default function Inventory() {
       </div>
 
       {/* Desktop table */}
-      <Card className="mt-6 hidden overflow-hidden md:block">
+      <Card className="mt-6 hidden overflow-hidden lg:block">
         <Table>
           <TableHeader className="bg-muted">
             <TableRow>

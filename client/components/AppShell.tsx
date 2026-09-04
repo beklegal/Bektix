@@ -102,7 +102,7 @@ export default function AppShell({ title, description, active, children }: AppSh
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               {allowedNav.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -137,7 +137,7 @@ export default function AppShell({ title, description, active, children }: AppSh
                 <LogOut className="h-4 w-4" />
               </Button>
               <button
-                className="md:hidden p-2"
+                className="lg:hidden p-2"
                 onClick={() => setMobileOpen(!mobileOpen)}
               >
                 {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -146,7 +146,7 @@ export default function AppShell({ title, description, active, children }: AppSh
           </div>
 
           {mobileOpen && (
-            <div className="md:hidden pb-4 pt-4 space-y-2">
+            <div className="lg:hidden pb-4 pt-4 space-y-2">
               {allowedNav.map((item) => {
                 const Icon = item.icon;
                 return (

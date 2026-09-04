@@ -206,7 +206,7 @@ export default function Debtors() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-3 md:hidden">
+      <div className="mt-6 grid gap-3 lg:hidden">
         {filtered.map((debtor) => (
           <Card key={debtor.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
@@ -255,7 +255,7 @@ export default function Debtors() {
         )}
       </div>
 
-      <Card className="mt-6 hidden overflow-hidden md:block">
+      <Card className="mt-6 hidden overflow-hidden lg:block">
         <Table>
           <TableHeader className="bg-muted">
             <TableRow>

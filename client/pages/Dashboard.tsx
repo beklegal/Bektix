@@ -37,11 +37,9 @@ export default function Dashboard() {
         ? 100
         : 0;
 
-  const currentCostByProductId = new Map(products.map((product) => [product.id, product.costPrice]));
   const profitToday = salesToday.reduce((sum, s) => {
     const saleProfit = s.items.reduce(
-      (pSum, li) =>
-        pSum + (li.unitPrice - (currentCostByProductId.get(li.productId) ?? li.unitCost)) * li.quantity,
+      (pSum, li) => pSum + (li.unitPrice - li.unitCost) * li.quantity,
       0,
     );
     return sum + saleProfit;
