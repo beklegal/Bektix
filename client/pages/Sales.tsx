@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/bektix/api";
+import { useQuery } from "@tanstack/react-query";
+import { queueSale, readQueuedSales, removeQueuedSale } from "@/lib/bektix/offline-queue";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +42,8 @@ export default function Sales() {
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [requesting, setRequesting] = useState(false);
+  const [customerId, setCustomerId] = useState("");
+  const customersQuery = useQuery({ queryKey: ["customers"], queryFn: api.getCustomers, enabled: paymentOpen });
 
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -119,7 +123,7 @@ export default function Sales() {
     setPayerType("walkIn");
     setAmountPaid(total.toFixed(2));
     setPrintReceipt(shop?.preferences.autoPrintReceipt ?? false);
-    setPaymentId(null); setPaymentStatus(null); setPhoneNumber(""); setCustomerEmail("");
+    setPaymentId(null); setPaymentStatus(null); setPhoneNumber(""); setCustomerEmail(""); setCustomerId("");
     setPaymentOpen(true);
   };
 
@@ -135,18 +139,26 @@ export default function Sales() {
       return;
     }
 
+    const idempotencyKey = crypto.randomUUID();
     try {
       const { saleId } = await actions.createSale({
         items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity })),
         paymentMethod,
         payerType,
         amountPaid: paid,
+        customerId: customerId || undefined,
+        idempotencyKey,
       });
       setPaymentOpen(false);
       setCart([]);
       setAmountPaid("");
       navigate(printReceipt ? `/receipt/${saleId}?autoprint=1` : `/receipt/${saleId}`);
     } catch (err) {
+      if (!navigator.onLine) {
+        queueSale({ idempotencyKey, items: cart.map((line) => ({ productId: line.productId, quantity: line.quantity })), paymentMethod: paymentMethod as "cash" | "cheque", payerType, amountPaid: paid, customerId: customerId || undefined, queuedAt: new Date().toISOString() });
+        setPaymentOpen(false); setCart([]); toast({ title: "Sale queued offline", description: "It will be securely retried when this device reconnects." });
+        return;
+      }
       toast({
         title: "Sale failed",
         description: err instanceof Error ? err.message : "Please try again.",
@@ -154,6 +166,10 @@ export default function Sales() {
       });
     }
   };
+  useEffect(() => {
+    const sync = async () => { if (!navigator.onLine) return; for (const queued of readQueuedSales()) { try { await actions.createSale(queued); removeQueuedSale(queued.idempotencyKey); } catch { break; } } };
+    window.addEventListener("online", sync); void sync(); return () => window.removeEventListener("online", sync);
+  }, [actions]);
 
   const requestMobileMoney = async () => {
     if (!phoneNumber.trim()) { toast({ title: "Customer mobile number is required", variant: "destructive" }); return; }
@@ -363,6 +379,15 @@ export default function Sales() {
                   <p className="text-xs text-muted-foreground">Bank cheque</p>
                 </button>
               </div>
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Customer</label>
+              <select value={customerId} onChange={(e) => { const selected = customersQuery.data?.find((customer) => customer.id === e.target.value); setCustomerId(e.target.value); if (selected?.email && !customerEmail) setCustomerEmail(selected.email); if (selected?.phone && !phoneNumber) setPhoneNumber(selected.phone); }} className="h-11 rounded-md border border-border bg-background px-3 text-sm" disabled={!!paymentId}>
+                <option value="">Walk-in customer</option>
+                {(customersQuery.data ?? []).map((customer) => <option key={customer.id} value={customer.id}>{customer.name}{customer.phone ? ` — ${customer.phone}` : ""}</option>)}
+              </select>
+              <p className="text-xs text-muted-foreground">Create customer profiles from the Customers page to link purchase history and receipts.</p>
             </div>
 
             <div className="grid gap-2">

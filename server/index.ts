@@ -15,6 +15,7 @@ import { bankingRouter } from "./routes/banking.js";
 import { platformRouter } from "./routes/platform.js";
 import { paymentsRouter } from "./routes/payments.js";
 import { commerceRouter } from "./routes/commerce.js";
+import { publicStoreRouter } from "./routes/public-store.js";
 import {
   apiRateLimit,
   rejectCrossOriginWrites,
@@ -44,6 +45,7 @@ export async function createServer() {
     const ping = process.env.PING_MESSAGE ?? "ping";
     res.json({ message: ping });
   });
+  app.use("/api/public/store", publicStoreRouter);
 
   app.use("/api/auth", authRouter);
   app.use("/api/platform", platformRouter);

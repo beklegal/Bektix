@@ -111,6 +111,8 @@ export interface CreateSaleRequest {
   paymentMethod: Sale["paymentMethod"];
   payerType: Sale["payerType"];
   amountPaid: number;
+  customerId?: string;
+  idempotencyKey?: string;
 }
 
 export interface CreateDebtorRequest

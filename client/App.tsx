@@ -22,6 +22,9 @@ import Payroll from "./pages/Payroll";
 import Creditors from "./pages/Creditors";
 import Banking from "./pages/Banking";
 import SuperAdmin from "./pages/SuperAdmin";
+import Customers from "./pages/Customers";
+import Storefront from "./pages/Storefront";
+import BusinessHub from "./pages/BusinessHub";
 import { BektixProvider } from "@/lib/bektix/context";
 import RequireAuth from "@/components/RequireAuth";
 import RequireAdmin from "@/components/RequireAdmin";
@@ -41,6 +44,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/store/:slug" element={<Storefront />} />
             <Route
               path="/super-admin"
               element={
@@ -112,6 +116,10 @@ const App = () => (
               }
             />
             <Route
+              path="/business-hub"
+              element={<RequireAuth><RequireAdmin><RequireTenant><BusinessHub /></RequireTenant></RequireAdmin></RequireAuth>}
+            />
+            <Route
               path="/apps-services"
               element={
                 <RequireAuth>
@@ -158,6 +166,10 @@ const App = () => (
                   </RequireAdmin>
                 </RequireAuth>
               }
+            />
+            <Route
+              path="/customers"
+              element={<RequireAuth><RequireTenant><Customers /></RequireTenant></RequireAuth>}
             />
             <Route
               path="/settings"

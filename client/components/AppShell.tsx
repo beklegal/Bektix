@@ -12,6 +12,7 @@ import {
   Grid3X3,
   ShieldCheck,
   Users,
+  ContactRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBektix } from "@/lib/bektix/context";
@@ -24,6 +25,7 @@ type AppShellSection =
   | "debtors"
   | "apps-services"
   | "users"
+  | "customers"
   | "settings"
   | "super-admin";
 
@@ -41,6 +43,7 @@ const navigation = [
   { label: "POS", path: "/sales", key: "sales", icon: ShoppingCart },
   { label: "Apps & Services", path: "/apps-services", key: "apps-services", icon: Grid3X3 },
   { label: "Users", path: "/users", key: "users", icon: Users },
+  { label: "Customers", path: "/customers", key: "customers", icon: ContactRound },
   { label: "Settings", path: "/settings", key: "settings", icon: Settings },
 ];
 
@@ -70,7 +73,7 @@ export default function AppShell({ title, description, active, children }: AppSh
       item.key === "users" ||
       item.key === "settings" ||
       item.key === "reports" ||
-      item.key === "apps-services"
+      item.key === "apps-services" || item.key === "customers"
     ) return false;
     return true;
   });

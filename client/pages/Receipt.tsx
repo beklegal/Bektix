@@ -3,10 +3,13 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/use-toast";
 import { useBektix } from "@/lib/bektix/context";
 import { formatMoney } from "@/lib/bektix/format";
 import { api } from "@/lib/bektix/api";
-import { Printer, ArrowLeft, FileText, ReceiptText } from "lucide-react";
+import { Printer, ArrowLeft, FileText, ReceiptText, RotateCcw } from "lucide-react";
 import type { ReceiptFormat } from "@shared/bektix";
 
 function paymentMethodLabel(method: string) {
@@ -51,6 +54,10 @@ export default function Receipt() {
   const [searchParams] = useSearchParams();
   const { shop, user } = useBektix();
   const [format, setFormat] = useState<ReceiptFormat>(shop?.preferences.receiptFormat ?? "a4");
+  const [returnOpen, setReturnOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returnQuantities, setReturnQuantities] = useState<Record<string, string>>({});
+  const [returning, setReturning] = useState(false);
 
   const saleQuery = useQuery({
     queryKey: ["sale", saleId],
@@ -116,6 +123,14 @@ export default function Receipt() {
   const receiptDate = new Date(sale.createdAt).toLocaleString();
   const cashierName = sale.cashierName || user?.email || "Cashier";
   const shopName = shop?.name || "BEKTIX";
+  const submitReturn = async () => {
+    const items = sale.items.map((item) => ({ productId: item.productId, quantity: Number.parseInt(returnQuantities[item.productId] || "0", 10) || 0 })).filter((item) => item.quantity > 0);
+    if (!items.length) return toast({ title: "Enter at least one return quantity", variant: "destructive" });
+    setReturning(true);
+    try { await api.createSaleReturn(sale.id, { items, reason: returnReason.trim() || undefined }); setReturnOpen(false); setReturnReason(""); setReturnQuantities({}); toast({ title: "Return completed", description: "Stock has been restored." }); }
+    catch (err) { toast({ title: "Could not complete return", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" }); }
+    finally { setReturning(false); }
+  };
 
   return (
     <div className="bektix-receipt-page min-h-screen bg-background p-6">
@@ -141,6 +156,7 @@ export default function Receipt() {
             >
               New Sale
             </Button>
+            {user?.role === "admin" && <Button variant="outline" onClick={() => setReturnOpen(true)} className="h-11"><RotateCcw className="mr-2 h-4 w-4" />Return items</Button>}
           </div>
         </div>
 
@@ -267,6 +283,16 @@ export default function Receipt() {
           </article>
         </div>
       </div>
+      <Dialog open={returnOpen} onOpenChange={setReturnOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Return sale items</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            {sale.items.map((item) => <div key={item.productId} className="grid grid-cols-[1fr_90px] items-center gap-3"><div><p className="text-sm font-medium">{item.name}</p><p className="text-xs text-muted-foreground">Sold: {item.quantity}</p></div><Input inputMode="numeric" placeholder="Qty" value={returnQuantities[item.productId] || ""} onChange={(event) => setReturnQuantities({ ...returnQuantities, [item.productId]: event.target.value })} /></div>)}
+            <Input placeholder="Reason (optional)" value={returnReason} onChange={(event) => setReturnReason(event.target.value)} />
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setReturnOpen(false)} disabled={returning}>Cancel</Button><Button onClick={submitReturn} disabled={returning}>{returning ? "Processing…" : "Complete return"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

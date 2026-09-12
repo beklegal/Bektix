@@ -1,0 +1,21 @@
+import { useMemo, useState } from "react";
+import AppShell from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/use-toast";
+import { api } from "@/lib/bektix/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, UserPlus, Users } from "lucide-react";
+
+export default function Customers() {
+  const queryClient = useQueryClient();
+  const { data: customers = [], isLoading } = useQuery({ queryKey: ["customers"], queryFn: api.getCustomers });
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [draft, setDraft] = useState({ name: "", phone: "", email: "", consentMarketing: false });
+  const filtered = useMemo(() => { const term = search.trim().toLowerCase(); return !term ? customers : customers.filter((customer) => [customer.name, customer.phone, customer.email].some((value) => value?.toLowerCase().includes(term))); }, [customers, search]);
+  const save = async () => { if (!draft.name.trim()) return toast({ title: "Customer name is required", variant: "destructive" }); try { await api.createCustomer({ name: draft.name.trim(), phone: draft.phone.trim() || undefined, email: draft.email.trim() || undefined, consentMarketing: draft.consentMarketing }); await queryClient.invalidateQueries({ queryKey: ["customers"] }); setDraft({ name: "", phone: "", email: "", consentMarketing: false }); setOpen(false); toast({ title: "Customer added" }); } catch (err) { toast({ title: "Could not add customer", description: err instanceof Error ? err.message : "Please try again.", variant: "destructive" }); } };
+  return <AppShell title="Customers" description="Customer records for future orders, receipts, and consent-based communication." active="apps-services"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="relative w-full sm:max-w-md"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search customers" /></div><Button onClick={() => setOpen(true)}><UserPlus className="mr-2 h-4 w-4" />Add customer</Button></div><Card className="mt-6 overflow-hidden"><div className="grid grid-cols-[1.4fr_1fr_1fr] gap-3 border-b p-4 text-xs font-medium text-muted-foreground"><span>Name</span><span>Phone</span><span>Email</span></div>{isLoading ? <p className="p-6 text-sm text-muted-foreground">Loading customers…</p> : filtered.length ? filtered.map((customer) => <div key={customer.id} className="grid grid-cols-[1.4fr_1fr_1fr] gap-3 border-b p-4 text-sm last:border-0"><span className="font-medium">{customer.name}</span><span className="truncate text-muted-foreground">{customer.phone || "—"}</span><span className="truncate text-muted-foreground">{customer.email || "—"}</span></div>) : <div className="p-10 text-center text-sm text-muted-foreground"><Users className="mx-auto mb-3 h-9 w-9" />No customers yet.</div>}</Card><Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Add customer</DialogTitle></DialogHeader><div className="grid gap-3"><Input placeholder="Customer name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /><Input placeholder="Phone (optional)" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} /><Input type="email" placeholder="Email (optional)" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.consentMarketing} onChange={(event) => setDraft({ ...draft, consentMarketing: event.target.checked })} />Customer agreed to marketing messages</label></div><DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={save}>Save customer</Button></DialogFooter></DialogContent></Dialog></AppShell>;
+}

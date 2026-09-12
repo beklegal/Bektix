@@ -78,6 +78,14 @@ export default function AppsServices() {
       feature: "debtors",
     },
     {
+      title: "Business Hub",
+      description: "Storefront, official integrations, accounting journal, and verified insights.",
+      path: "/business-hub",
+      icon: TrendingUp,
+      badge: "New",
+      feature: "reports",
+    },
+    {
       title: "Reports",
       description: "Sales, profit, transactions, and best-selling product analytics.",
       path: "/reports",

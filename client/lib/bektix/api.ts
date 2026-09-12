@@ -111,6 +111,21 @@ export const api = {
   createSale: (input: CreateSaleRequest) =>
     apiRequest<Sale>("/api/sales", { method: "POST", json: input }),
   getSale: (saleId: string) => apiRequest<Sale>(`/api/sales/${saleId}`),
+  createSaleReturn: (saleId: string, input: { items: Array<{ productId: string; quantity: number }>; reason?: string }) =>
+    apiRequest<{ id: string; saleId: string; status: string }>(`/api/sales/${saleId}/returns`, { method: "POST", json: input }),
+
+  getCustomers: () => apiRequest<Array<{ id: string; name: string; phone?: string; email?: string; consentMarketing: boolean; createdAt: string }>>("/api/commerce/customers"),
+  createCustomer: (input: { name: string; phone?: string; email?: string; consentMarketing?: boolean }) =>
+    apiRequest<{ id: string; name: string }>("/api/commerce/customers", { method: "POST", json: input }),
+  updateCustomer: (id: string, input: { name?: string; phone?: string; email?: string; consentMarketing?: boolean }) => apiRequest(`/api/commerce/customers/${id}`, { method: "PATCH", json: input }),
+  getCustomerHistory: (id: string) => apiRequest<Array<{ id: string; sale_id?: string; status: string; total: number; created_at: string }>>(`/api/commerce/customers/${id}/history`),
+  getDailyAnalytics: () => apiRequest<Array<{ metric_date: string; sales_count: number; revenue: number; gross_profit: number; items_sold: number }>>("/api/commerce/analytics/daily"),
+  getAssistantInsights: () => apiRequest<{ period: string; revenue: number; grossProfit: number; salesCount: number; lowStock: Array<{ name: string; quantity: number }>; insights: string[] }>("/api/commerce/assistant/insights"),
+  getJournal: () => apiRequest<Array<{ id: string; source_type: string; description: string; entry_date: string }>>("/api/commerce/accounting/journal"),
+  getStorefront: () => apiRequest<{ slug: string; enabled: boolean }>("/api/commerce/storefront"),
+  saveStorefront: (input: { slug: string; enabled: boolean }) => apiRequest<{ slug: string; enabled: boolean }>("/api/commerce/storefront", { method: "PUT", json: input }),
+  getIntegrations: () => apiRequest<Array<{ provider: string; category: string; status: string; settings: Record<string, string> }>>("/api/commerce/integrations"),
+  saveIntegration: (input: { provider: "whatsapp" | "meta" | "tiktok" | "linkedin" | "delivery"; status: "disconnected" | "pending_setup"; settings: Record<string, string> }) => apiRequest("/api/commerce/integrations", { method: "PUT", json: input }),
 
   getPaymentSettings: () => apiRequest<{ connected: boolean; mode?: "test" | "live"; status?: string; keySuffix?: string; webhookUrl: string }>("/api/payments/settings"),
   savePaymentSettings: (input: { secretKey: string; mode: "test" | "live" }) => apiRequest("/api/payments/settings", { method: "PUT", json: input }),

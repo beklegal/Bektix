@@ -89,6 +89,8 @@ type BektixContextValue = {
       paymentMethod: PaymentMethod;
       payerType: PayerType;
       amountPaid: number;
+      customerId?: string;
+      idempotencyKey?: string;
     }) => Promise<{ saleId: string }>;
     addDebtor: (input: Pick<Debtor, "name" | "date" | "invoiceNumber" | "amount">) => Promise<void>;
     updateDebtor: (
@@ -383,8 +385,8 @@ export function BektixProvider({ children }: { children: React.ReactNode }) {
       },
       resetUserPassword: async (userId, password) => { await api.resetUserPassword(userId, password); },
       updateUserAccess: async (userId, patch) => { await api.updateUserAccess(userId, patch); await queryClient.invalidateQueries({ queryKey: ["users"] }); },
-      createSale: async ({ items, paymentMethod, payerType, amountPaid }) => {
-        const sale = await api.createSale({ items, paymentMethod, payerType, amountPaid });
+      createSale: async ({ items, paymentMethod, payerType, amountPaid, customerId, idempotencyKey }) => {
+        const sale = await api.createSale({ items, paymentMethod, payerType, amountPaid, customerId, idempotencyKey });
         await queryClient.invalidateQueries({ queryKey: ["sales"] });
         await queryClient.invalidateQueries({ queryKey: ["products"] });
         return { saleId: sale.id };
