@@ -64,7 +64,7 @@ async function apiRequest<T>(path: string, init?: RequestInit & { json?: unknown
 }
 
 export const api = {
-  me: () => apiRequest<AuthResponse>("/api/auth/me"),
+  me: () => apiRequest<AuthResponse | null>("/api/auth/me"),
   login: (input: AuthLoginRequest) =>
     apiRequest<AuthResponse>("/api/auth/login", { method: "POST", json: input }),
   logout: () => apiRequest<void>("/api/auth/logout", { method: "POST" }),

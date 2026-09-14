@@ -4,6 +4,7 @@ import { pool } from "../db/pool.js";
 import { verifyPassword } from "../auth/password.js";
 import {
   clearUserSessionCookie,
+  getUserSession,
   setUserSessionCookie,
   signUserSession,
 } from "../auth/session.js";
@@ -84,7 +85,13 @@ authRouter.post("/logout", async (_req, res) => {
   res.status(204).end();
 });
 
-authRouter.get("/me", requireUser, async (req, res) => {
+authRouter.get("/me", (req, res, next) => {
+  if (!getUserSession(req)) {
+    clearUserSessionCookie(res);
+    return res.json(null);
+  }
+  return next();
+}, requireUser, async (req, res) => {
   const auth = req.auth!;
   res.json({
     session: { userId: auth.userId, shopId: auth.shopId },
