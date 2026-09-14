@@ -12,6 +12,8 @@ export async function postCompletedSale(client: PoolClient, input: { shopId: str
   if (input.costOfGoods > 0) {
     lines.push(["5000-cost-of-goods-sold", input.costOfGoods, 0], ["1200-inventory", 0, input.costOfGoods]);
   }
-  for (const [accountCode, debit, credit] of lines) await client.query("INSERT INTO journal_lines (id,journal_entry_id,account_code,debit,credit) VALUES ($1,$2,$3,$4,$5)", [crypto.randomUUID(), entryId, accountCode, debit, credit]);
+  for (const [accountCode, debit, credit] of lines.filter(([, debit, credit]) => debit !== 0 || credit !== 0)) {
+    await client.query("INSERT INTO journal_lines (id,journal_entry_id,account_code,debit,credit) VALUES ($1,$2,$3,$4,$5)", [crypto.randomUUID(), entryId, accountCode, debit, credit]);
+  }
   await client.query("INSERT INTO daily_metrics (shop_id,branch_id,metric_date,sales_count,revenue,gross_profit,items_sold) VALUES ($1,$2,current_date,1,$3,$4,$5) ON CONFLICT (shop_id,branch_id,metric_date) DO UPDATE SET sales_count=daily_metrics.sales_count+1,revenue=daily_metrics.revenue+EXCLUDED.revenue,gross_profit=daily_metrics.gross_profit+EXCLUDED.gross_profit,items_sold=daily_metrics.items_sold+EXCLUDED.items_sold,updated_at=now()", [input.shopId, input.branchId, input.total, input.total - input.costOfGoods, input.itemCount]);
 }
